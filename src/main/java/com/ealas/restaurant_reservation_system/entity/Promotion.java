@@ -3,6 +3,7 @@ package com.ealas.restaurant_reservation_system.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,16 +30,16 @@ public class Promotion {
     @NotBlank
     private String description;
 
-    private String discount;
+    //private String discount;
 
     @NotBlank
     private String conditions;
 
-    @NotBlank
+    @NotNull
     @Column(name = "start_date")
     private Date startDate;
 
-    @NotBlank
+    @NotNull
     @Column(name = "end_date")
     private Date endDate;
 

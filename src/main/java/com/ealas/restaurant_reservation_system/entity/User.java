@@ -6,11 +6,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,8 +21,7 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
-@Inheritance(strategy = InheritanceType.JOINED)
-public abstract class User {
+public  class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,10 +48,23 @@ public abstract class User {
     private String email;
 
     @NotBlank
+    private String phone;
+
+    private String address;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime lastLogin;
+
+    @NotNull
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
     private boolean enabled;
+
+    @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private boolean admin;
 
     @JsonIgnoreProperties({"users", "handler", "hibernateLazyInitializer"})
     @ManyToMany
@@ -60,19 +74,19 @@ public abstract class User {
             inverseJoinColumns = @JoinColumn(name = "role_id"),
             uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "role_id"})
     )
-    private List<Role> roles;
+    private List<Role> roles = new ArrayList<>();
 
     @JsonIgnoreProperties({"users", "handler", "hibernateLazyInitializer"})
     @OneToMany(mappedBy = "user")
-    private List<Review> reviews;
+    private List<Review> reviews = new ArrayList<>();
 
     @JsonIgnoreProperties({"users", "handler", "hibernateLazyInitializer"})
     @OneToMany(mappedBy = "user")
-    private List<Reservation> reservations;
+    private List<Reservation> reservations = new ArrayList<>();
 
     @JsonIgnoreProperties({"users", "handler", "hibernateLazyInitializer"})
     @OneToMany(mappedBy = "user")
-    private List<Payment> payments;
+    private List<Payment> payments = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
@@ -80,9 +94,5 @@ public abstract class User {
     }
 
     public User() {
-        this.roles = new ArrayList<>();
-        this.reviews = new ArrayList<>();
-        this.reservations = new ArrayList<>();
-        this.payments = new ArrayList<>();
     }
 }

@@ -2,7 +2,9 @@ package com.ealas.restaurant_reservation_system.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,16 +24,16 @@ public class Menu {
     private Long id;
 
     @NotBlank
-    @Column(name = "name_menu")
+    @Column(name = "name_menu", unique = true)
     private String name;
 
     @NotBlank
     private String description;
 
-    @NotBlank
+    @NotNull
+    @Min(1)
     private Double price;
 
-    @NotBlank
     private boolean available;
 
     @NotBlank

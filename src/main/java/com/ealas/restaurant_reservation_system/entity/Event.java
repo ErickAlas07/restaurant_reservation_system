@@ -1,12 +1,12 @@
 package com.ealas.restaurant_reservation_system.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -14,9 +14,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "events")
-@Getter
-@Setter
-@ToString
+@Data
+
 public class Event {
 
     @Id
@@ -31,15 +30,16 @@ public class Event {
     @Size(max = 100)
     private String description;
 
-    @NotBlank
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @NotNull
     @Column(name = "event_date")
     private Date eventDate;
 
-    @NotBlank
+    @NotNull
     @Column(name = "ticket_price")
     private Double ticketPrice;
 
-    @NotBlank
+    @NotNull
     private Integer capacity;
 
     @JsonIgnoreProperties({"events", "handler", "hibernateLazyInitializer"})

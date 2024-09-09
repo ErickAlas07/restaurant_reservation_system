@@ -1,16 +1,20 @@
 package com.ealas.restaurant_reservation_system.service.impl;
 
+import com.ealas.restaurant_reservation_system.dto.UserUpdateDto;
 import com.ealas.restaurant_reservation_system.entity.Role;
 import com.ealas.restaurant_reservation_system.entity.User;
 import com.ealas.restaurant_reservation_system.repository.IRoleRepository;
 import com.ealas.restaurant_reservation_system.repository.IUserRepository;
 import com.ealas.restaurant_reservation_system.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,7 +33,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public List<User> findAll() {
-        return (List<User>) userRepository.findAll();
+        return userRepository.findAll();
     }
 
     @Override
@@ -50,8 +54,42 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     @Override
-    public boolean existsByUsername(String username) {
-        return userRepository.existsByUsername(username);
+    public Optional<User> update(Long id, UserUpdateDto userUpdateDto) {
+        return userRepository.findById(id).map(existingUser -> {
+            existingUser.setName(userUpdateDto.getName());
+            existingUser.setLastname(userUpdateDto.getLastname());
+            existingUser.setEmail(userUpdateDto.getEmail());
+            existingUser.setPhone(userUpdateDto.getPhone());
+            existingUser.setAddress(userUpdateDto.getAddress());
+            existingUser.setGender(userUpdateDto.getGender());
+            existingUser.setLastLogin(new Date());
+
+            return userRepository.save(existingUser);
+        });
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public String getCurrentUsername() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof UserDetails) {
+            return ((UserDetails) principal).getUsername();
+        }
+        return principal.toString();
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    public User authUsuario() {
+        String username = getCurrentUsername();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
     }
 }

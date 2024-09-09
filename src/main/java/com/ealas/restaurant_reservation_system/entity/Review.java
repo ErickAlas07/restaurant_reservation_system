@@ -1,21 +1,19 @@
 package com.ealas.restaurant_reservation_system.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
 import java.util.Date;
 
 @Entity
 @Table(name = "reviews")
-@Getter
-@Setter
-@ToString
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Review {
 
     @Id
@@ -25,12 +23,12 @@ public class Review {
     @NotBlank
     private String comment;
 
-    @NotBlank
+    @NotNull
     private Integer rating;
 
-    @NotBlank
+    @JsonFormat(pattern="yyyy-MM-dd")
     @Column(name = "review_date")
-    private Date date;
+    private Date reviewDate;
 
     @JsonIgnoreProperties({"reviews", "handler", "hibernateLazyInitializer"})
     @ManyToOne

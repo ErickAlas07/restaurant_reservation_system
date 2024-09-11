@@ -3,13 +3,11 @@ package com.ealas.restaurant_reservation_system.service.impl;
 import com.ealas.restaurant_reservation_system.entity.Review;
 import com.ealas.restaurant_reservation_system.entity.User;
 import com.ealas.restaurant_reservation_system.repository.IReviewRepository;
-import com.ealas.restaurant_reservation_system.repository.IUserRepository;
 import com.ealas.restaurant_reservation_system.service.IReviewService;
-import com.ealas.restaurant_reservation_system.service.UserService;
+import com.ealas.restaurant_reservation_system.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.core.userdetails.UserDetails;
 
 
 import java.util.List;
@@ -22,7 +20,7 @@ public class ReviewServiceImpl implements IReviewService {
     IReviewRepository reviewRepository;
 
     @Autowired
-    UserService userService;
+    IUserService userService;
 
     @Transactional(readOnly = true)
     @Override
@@ -78,7 +76,7 @@ public class ReviewServiceImpl implements IReviewService {
         Optional<User> user = userService.findByUsername(username);
 
         if (user.isPresent()) {
-            return reviewRepository.findByUser(user.get());
+            return reviewRepository.findHistoryByUserName(String.valueOf(user.get()));
         } else {
             throw new IllegalStateException("El usuario logueado no existe en la base de datos.");
         }

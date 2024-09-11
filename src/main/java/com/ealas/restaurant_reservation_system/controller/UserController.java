@@ -3,14 +3,13 @@ package com.ealas.restaurant_reservation_system.controller;
 import com.ealas.restaurant_reservation_system.dto.UserRegisterDto;
 import com.ealas.restaurant_reservation_system.dto.UserUpdateDto;
 import com.ealas.restaurant_reservation_system.entity.User;
-import com.ealas.restaurant_reservation_system.service.UserService;
+import com.ealas.restaurant_reservation_system.service.IUserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -19,7 +18,7 @@ import java.util.*;
 @RequestMapping("/api/users")
 public class UserController {
     @Autowired
-    private UserService userService;
+    private IUserService userService;
 
     @GetMapping
     public List<User> list() {

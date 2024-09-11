@@ -2,20 +2,17 @@ package com.ealas.restaurant_reservation_system.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
+import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "restaurant")
-@Getter
-@Setter
-@ToString
+@Data
 public class Restaurant {
 
     @Id
@@ -36,11 +33,15 @@ public class Restaurant {
     @Size(max = 12)
     private String phone;
 
+    @Email
+    private String email;
+
     @NotBlank
+
     @Size(max = 50)
     private String city;
 
-    @NotBlank
+    @NotNull
     private Integer capacity;
 
     @NotBlank

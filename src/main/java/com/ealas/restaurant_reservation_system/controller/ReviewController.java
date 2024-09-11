@@ -1,9 +1,7 @@
 package com.ealas.restaurant_reservation_system.controller;
 
 import com.ealas.restaurant_reservation_system.entity.Review;
-import com.ealas.restaurant_reservation_system.entity.User;
 import com.ealas.restaurant_reservation_system.service.IReviewService;
-import com.ealas.restaurant_reservation_system.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

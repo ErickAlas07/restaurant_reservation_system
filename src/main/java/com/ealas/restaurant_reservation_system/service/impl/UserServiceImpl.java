@@ -5,7 +5,7 @@ import com.ealas.restaurant_reservation_system.entity.Role;
 import com.ealas.restaurant_reservation_system.entity.User;
 import com.ealas.restaurant_reservation_system.repository.IRoleRepository;
 import com.ealas.restaurant_reservation_system.repository.IUserRepository;
-import com.ealas.restaurant_reservation_system.service.UserService;
+import com.ealas.restaurant_reservation_system.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements IUserService {
 
     @Autowired
     private IUserRepository userRepository;

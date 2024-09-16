@@ -16,6 +16,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/promotions")
+@CrossOrigin(origins = "http://localhost:4200", originPatterns = "*")
 public class PromotionController {
 
     @Autowired

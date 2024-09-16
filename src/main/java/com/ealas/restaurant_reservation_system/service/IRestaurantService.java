@@ -1,8 +1,6 @@
 package com.ealas.restaurant_reservation_system.service;
 
 import com.ealas.restaurant_reservation_system.dto.RestaurantDto;
-import com.ealas.restaurant_reservation_system.entity.Restaurant;
-
 import java.util.List;
 import java.util.Optional;
 

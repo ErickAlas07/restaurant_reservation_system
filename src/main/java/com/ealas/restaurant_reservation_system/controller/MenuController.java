@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +30,7 @@ public class MenuController {
     @GetMapping("/{id}")
     public ResponseEntity<?> view(@PathVariable Long id) {
         Optional<Menu> optionalMenu = menuService.findById(id);
-        if(optionalMenu.isPresent()){
+        if (optionalMenu.isPresent()) {
             return ResponseEntity.ok(optionalMenu.orElseThrow());
         }
         return ResponseEntity.notFound().build();
@@ -39,8 +38,8 @@ public class MenuController {
 
     //@PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<?> create (@Valid @RequestBody Menu menu, BindingResult result) {
-        if(result.hasFieldErrors()){
+    public ResponseEntity<?> create(@Valid @RequestBody Menu menu, BindingResult result) {
+        if (result.hasFieldErrors()) {
             return validation(result);
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(menuService.save(menu));
@@ -48,8 +47,8 @@ public class MenuController {
 
     //@PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@Valid @RequestBody Menu menu, BindingResult result, @PathVariable Long id){
-        if(result.hasFieldErrors()){
+    public ResponseEntity<?> update(@Valid @RequestBody Menu menu, BindingResult result, @PathVariable Long id) {
+        if (result.hasFieldErrors()) {
             return validation(result);
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(menuService.update(id, menu));
@@ -57,7 +56,7 @@ public class MenuController {
 
     //@PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id){
+    public ResponseEntity<?> delete(@PathVariable Long id) {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(menuService.delete(id));
     }
 
@@ -69,5 +68,4 @@ public class MenuController {
         });
         return ResponseEntity.badRequest().body(errors);
     }
-
 }

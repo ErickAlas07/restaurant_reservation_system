@@ -3,26 +3,23 @@ package com.ealas.restaurant_reservation_system.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "tables")
-@Getter @Setter
-@ToString
+@Data
 public class Mesa {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
+    @NotNull
     @Column(name = "table_number")
     private Integer tableNumber;
 
@@ -30,9 +27,13 @@ public class Mesa {
     @Size(max = 100)
     private String location;
 
-    @NotBlank
+    @NotNull
     @Column(name = "number_seats")
     private Integer seats;
+
+    @NotNull
+    @Column(name = "available")
+    private boolean available;
 
     @JsonIgnoreProperties({"tables", "handler", "hibernateLazyInitializer"})
     @ManyToOne

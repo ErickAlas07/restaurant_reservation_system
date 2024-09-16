@@ -1,21 +1,18 @@
 package com.ealas.restaurant_reservation_system.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
-import java.time.LocalDate;
+import java.util.Date;
 
 @Entity
 @Table(name = "payments")
-@Getter
-@Setter
-@ToString
+@Data
 @NoArgsConstructor
 public class Payment {
 
@@ -23,7 +20,7 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
+    @NotNull
     @Column(name = "total_amount")
     private Double totalAmount;
 
@@ -31,10 +28,11 @@ public class Payment {
     @Column(name = "payment_method")
     private String paymentMethod;
 
-    @NotBlank
+    @NotNull
     @Column(name = "payment_date")
-    private LocalDate paymentDate;
+    private Date paymentDate;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(unique = true)
     private String uuid;
 

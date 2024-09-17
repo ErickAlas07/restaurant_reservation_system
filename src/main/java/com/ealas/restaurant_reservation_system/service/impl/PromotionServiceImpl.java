@@ -1,6 +1,7 @@
 package com.ealas.restaurant_reservation_system.service.impl;
 
 import com.ealas.restaurant_reservation_system.entity.Promotion;
+import com.ealas.restaurant_reservation_system.exceptions.ResourceNotFoundException;
 import com.ealas.restaurant_reservation_system.repository.IPromotionRepository;
 import com.ealas.restaurant_reservation_system.service.IPromotionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,11 @@ public class PromotionServiceImpl implements IPromotionService {
     @Transactional(readOnly = true)
     @Override
     public Optional<Promotion> findById(Long id) {
-        return promotionRepository.findById(id);
+        Optional<Promotion> optionalPromotion = promotionRepository.findById(id);
+        if(optionalPromotion.isEmpty()){
+            throw new ResourceNotFoundException("Promotion not found with id " + id);
+        }
+        return optionalPromotion;
     }
 
     @Transactional
@@ -37,26 +42,24 @@ public class PromotionServiceImpl implements IPromotionService {
     @Transactional
     @Override
     public Optional<Promotion> update(Long id, Promotion promotion) {
-        Optional<Promotion> optionalPromotion = promotionRepository.findById(id);
-        if(optionalPromotion.isPresent()){
-            Promotion promotiondb = optionalPromotion.orElseThrow();
+        Promotion promotionDb = promotionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Promotion with id " + id + " not found."));
 
-            promotiondb.setTitle(promotion.getTitle());
-            promotiondb.setDescription(promotion.getDescription());
-            promotiondb.setConditions(promotion.getConditions());
-            promotiondb.setStartDate(promotion.getStartDate());
-            promotiondb.setEndDate(promotion.getEndDate());
+        // Actualizar los campos de la promoción
+        promotionDb.setTitle(promotion.getTitle());
+        promotionDb.setDescription(promotion.getDescription());
+        promotionDb.setConditions(promotion.getConditions());
+        promotionDb.setStartDate(promotion.getStartDate());
+        promotionDb.setEndDate(promotion.getEndDate());
 
-            return Optional.of(promotionRepository.save(promotiondb));
-        }
-
-        return optionalPromotion;
+        return Optional.of(promotionRepository.save(promotionDb));
     }
 
     @Transactional
     @Override
     public Optional<Promotion> delete(Long id) {
-        Optional<Promotion> optionalPromotion = promotionRepository.findById(id);
+        Optional<Promotion> optionalPromotion = Optional.of(promotionRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Promotion not found with id " + id)));
         optionalPromotion.ifPresent(promotionDb -> {
             promotionRepository.delete(promotionDb);
         });
@@ -66,6 +69,7 @@ public class PromotionServiceImpl implements IPromotionService {
     @Transactional(readOnly = true)
     @Override
     public Optional<Promotion> findByTitle(String title) {
-        return promotionRepository.findByTitle(title);
+        return Optional.ofNullable(promotionRepository.findByTitle(title)
+                .orElseThrow(() -> new ResourceNotFoundException("Promotion with title '" + title + "' not found.")));
     }
 }

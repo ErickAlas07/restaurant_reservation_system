@@ -2,6 +2,8 @@ package com.ealas.restaurant_reservation_system.service.impl;
 
 import com.ealas.restaurant_reservation_system.dto.EventDto;
 import com.ealas.restaurant_reservation_system.entity.Event;
+import com.ealas.restaurant_reservation_system.exceptions.ResourceAlreadyExistsException;
+import com.ealas.restaurant_reservation_system.exceptions.ResourceNotFoundException;
 import com.ealas.restaurant_reservation_system.repository.IEventRepository;
 import com.ealas.restaurant_reservation_system.service.IEventService;
 import org.springframework.beans.BeanUtils;
@@ -30,50 +32,49 @@ public class EventServiceImpl implements IEventService {
     @Transactional(readOnly = true)
     @Override
     public Optional<EventDto> findById(Long id) {
-        return Optional.empty();
+        return Optional.ofNullable(eventRepository.findById(id)
+                .map(this::toDTO)
+                .orElseThrow(() -> new ResourceNotFoundException("Event with id " + id + " not found.")));
     }
 
     @Transactional
     @Override
     public EventDto save(EventDto eventDto) {
         boolean exists = eventRepository.existsByTitle(eventDto.getTitle());
-        if(!exists) {
+        if (!exists) {
             Event eventEntity = toEntity(eventDto);
             Event eventDb = eventRepository.save(eventEntity);
             return toDTO(eventDb);
         } else {
-            throw new RuntimeException("Event already exists");
+            throw new ResourceAlreadyExistsException("Event with title " + eventDto.getTitle() + " already exists.");
         }
     }
 
     @Transactional
     @Override
-    public Optional<EventDto> update(Long id, EventDto event) {
-        Optional<Event> eventOptional = eventRepository.findById(id);
-        if (eventOptional.isPresent()) {
-            Event eventDb = eventOptional.get();
-            if (event.getTitle() != null) eventDb.setTitle(event.getTitle());
-            if (event.getDescription() != null) eventDb.setDescription(event.getDescription());
-            if (event.getEventDate() != null) eventDb.setEventDate(event.getEventDate());
-            if (event.getTicketPrice() != null) eventDb.setTicketPrice(event.getTicketPrice());
-            if (event.getCapacity() != null) eventDb.setCapacity(event.getCapacity());
+    public Optional<EventDto> update(Long id, EventDto eventDto) {
+        Event eventDb = eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Event with id " + id + " not found."));
 
-            Event eventUpdated = eventRepository.save(eventDb);
-            return Optional.of(toDTO(eventUpdated));
-        }
+        // Actualizar los campos de la entidad Event
+        if (eventDto.getTitle() != null) eventDb.setTitle(eventDto.getTitle());
+        if (eventDto.getDescription() != null) eventDb.setDescription(eventDto.getDescription());
+        if (eventDto.getEventDate() != null) eventDb.setEventDate(eventDto.getEventDate());
+        if (eventDto.getTicketPrice() != null) eventDb.setTicketPrice(eventDto.getTicketPrice());
+        if (eventDto.getCapacity() != null) eventDb.setCapacity(eventDto.getCapacity());
 
-        return Optional.empty();
+        Event eventUpdated = eventRepository.save(eventDb);
+        return Optional.of(toDTO(eventUpdated));
     }
 
     @Transactional
     @Override
     public Optional<EventDto> delete(Long id) {
-        Optional<Event> event = eventRepository.findById(id);
-        if(event.isPresent()){
-            eventRepository.delete(event.get());
-            return Optional.of(toDTO(event.get()));
-        }
-        return Optional.empty();
+        Event eventDb = eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Event with id " + id + " not found."));
+
+        eventRepository.delete(eventDb);
+        return Optional.of(toDTO(eventDb));
     }
 
     public EventDto toDTO(Event event) {

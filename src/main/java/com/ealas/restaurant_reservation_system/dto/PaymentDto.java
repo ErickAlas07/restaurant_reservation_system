@@ -1,5 +1,7 @@
 package com.ealas.restaurant_reservation_system.dto;
 
+import com.ealas.restaurant_reservation_system.enums.PaymentMethod;
+import com.ealas.restaurant_reservation_system.enums.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,11 +14,12 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentDto {
-    private Long id;
     private Double totalAmount;
-    private String paymentMethod;
+    private PaymentMethod paymentMethod;
     private Date paymentDate;
-    private String uuid;
     private Long reservationId;
     private Long userId;
+    private PaymentStatus paymentStatus;
+    private String uuid;
+    private ReservationDto reservation;
 }

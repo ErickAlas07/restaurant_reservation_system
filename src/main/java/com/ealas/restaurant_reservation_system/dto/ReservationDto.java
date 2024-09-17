@@ -23,4 +23,5 @@ public class ReservationDto {
     private SpecialOccasion occasion;
     private String notes;
     private Long eventId;
+    private EventDto event;
 }

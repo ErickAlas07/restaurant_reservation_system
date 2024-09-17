@@ -1,6 +1,8 @@
 package com.ealas.restaurant_reservation_system.service.impl;
 
 import com.ealas.restaurant_reservation_system.entity.Menu;
+import com.ealas.restaurant_reservation_system.exceptions.ResourceAlreadyExistsException;
+import com.ealas.restaurant_reservation_system.exceptions.ResourceNotFoundException;
 import com.ealas.restaurant_reservation_system.repository.IMenuRepository;
 import com.ealas.restaurant_reservation_system.service.IMenuService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,20 +21,21 @@ public class MenuServiceImpl implements IMenuService {
     @Transactional(readOnly = true)
     @Override
     public List<Menu> findAll() {
-        return (List<Menu>) menuRepository.findAll();
+        return menuRepository.findAll();
     }
 
     @Transactional(readOnly = true)
     @Override
     public Optional<Menu> findById(Long id) {
-        return menuRepository.findById(id);
+        return Optional.ofNullable(menuRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Menu with id " + id + " not found.")));
     }
 
     @Transactional
     @Override
     public Menu save(Menu menu) {
         if (menuRepository.findByName(menu.getName()).isPresent()) {
-            throw new RuntimeException("Menu already exists");
+            throw new ResourceAlreadyExistsException("Menu with name: " + menu.getName() + " already exists.");
         }
         return menuRepository.save(menu);
     }
@@ -40,28 +43,25 @@ public class MenuServiceImpl implements IMenuService {
     @Transactional
     @Override
     public Optional<Menu> update(Long id, Menu menu) {
-        Optional<Menu> optionalMenu = menuRepository.findById(id);
-        if(optionalMenu.isPresent()){
-            Menu menudb = optionalMenu.orElseThrow();
+        Menu menuDb = menuRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Menu with id " + id + " not found."));
 
-            menudb.setName(menu.getName());
-            menudb.setPrice(menu.getPrice());
-            menudb.setDescription(menu.getDescription());
-            menudb.setAvailable(menu.isAvailable());
-            menudb.setCategory(menu.getCategory());
-            return Optional.of(menuRepository.save(menudb));
-        }
+        menuDb.setName(menu.getName());
+        menuDb.setPrice(menu.getPrice());
+        menuDb.setDescription(menu.getDescription());
+        menuDb.setAvailable(menu.isAvailable());
+        menuDb.setCategory(menu.getCategory());
 
-        return optionalMenu;
+        return Optional.of(menuRepository.save(menuDb));
     }
 
     @Transactional
     @Override
     public Optional<Menu> delete(Long id) {
-        Optional<Menu> optionalMenu = menuRepository.findById(id);
-        optionalMenu.ifPresent(menuDb -> {
-            menuRepository.delete(menuDb);
-        });
-        return optionalMenu;
+        Menu menuDb = menuRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Menu with id " + id + " not found."));
+
+        menuRepository.delete(menuDb);
+        return Optional.of(menuDb);
     }
 }

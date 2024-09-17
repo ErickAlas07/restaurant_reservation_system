@@ -3,6 +3,7 @@ package com.ealas.restaurant_reservation_system.service.impl;
 import com.ealas.restaurant_reservation_system.dto.UserUpdateDto;
 import com.ealas.restaurant_reservation_system.entity.Role;
 import com.ealas.restaurant_reservation_system.entity.User;
+import com.ealas.restaurant_reservation_system.exceptions.ResourceNotFoundException;
 import com.ealas.restaurant_reservation_system.repository.IRoleRepository;
 import com.ealas.restaurant_reservation_system.repository.IUserRepository;
 import com.ealas.restaurant_reservation_system.service.IUserService;
@@ -70,7 +71,6 @@ public class UserServiceImpl implements IUserService {
         });
     }
 
-    @Transactional(readOnly = true)
     @Override
     public String getCurrentUsername() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -81,7 +81,6 @@ public class UserServiceImpl implements IUserService {
         return principal.toString();
     }
 
-    @Transactional(readOnly = true)
     @Override
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
@@ -90,6 +89,6 @@ public class UserServiceImpl implements IUserService {
     public User authUsuario() {
         String username = getCurrentUsername();
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + username));
     }
 }

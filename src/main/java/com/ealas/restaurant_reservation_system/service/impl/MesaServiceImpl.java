@@ -3,6 +3,8 @@ package com.ealas.restaurant_reservation_system.service.impl;
 import com.ealas.restaurant_reservation_system.dto.MesaDto;
 import com.ealas.restaurant_reservation_system.entity.Mesa;
 import com.ealas.restaurant_reservation_system.entity.Restaurant;
+import com.ealas.restaurant_reservation_system.exceptions.ResourceAlreadyExistsException;
+import com.ealas.restaurant_reservation_system.exceptions.ResourceNotFoundException;
 import com.ealas.restaurant_reservation_system.repository.IMesaRepository;
 import com.ealas.restaurant_reservation_system.repository.IRestaurantRepository;
 import com.ealas.restaurant_reservation_system.service.IMesaService;
@@ -38,7 +40,7 @@ public class MesaServiceImpl implements IMesaService {
     @Override
     public Optional<MesaDto> findById(Long id) {
         Mesa mesa = mesaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Table not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Table not found with id " + id));
         return Optional.of(toDto(mesa));
     }
 
@@ -51,7 +53,7 @@ public class MesaServiceImpl implements IMesaService {
             Mesa mesaDb = mesaRepository.save(mesa);
             return toDto(mesaDb);
         } else {
-            throw new RuntimeException("Table already exists");
+            throw new ResourceAlreadyExistsException("Table with number :" + mesaDTO.getTableNumber() +  " already exists.");
         }
     }
 
@@ -68,13 +70,13 @@ public class MesaServiceImpl implements IMesaService {
 
             if (mesaDTO.getRestaurantId() != null) {
                 Restaurant restaurant = restaurantRepository.findById(mesaDTO.getRestaurantId())
-                        .orElseThrow(() -> new RuntimeException("Restaurant not found with id " + mesaDTO.getRestaurantId()));
+                        .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + mesaDTO.getRestaurantId()));
                 mesaDb.setRestaurant(restaurant);
             }
             Mesa mesaUpdated = mesaRepository.save(mesaDb);
             return Optional.of(toDto(mesaUpdated));
         } else {
-            throw new RuntimeException("Table not found with id " + id);
+            throw new ResourceNotFoundException("Table not found with id " + id);
         }
     }
 
@@ -107,7 +109,7 @@ public class MesaServiceImpl implements IMesaService {
 
         if (mesaDto.getRestaurantId() != null) {
             Restaurant restaurant = restaurantRepository.findById(mesaDto.getRestaurantId())
-                    .orElseThrow(() -> new RuntimeException("Restaurant not found with id " + mesaDto.getRestaurantId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + mesaDto.getRestaurantId()));
             mesa.setRestaurant(restaurant);
 
         }

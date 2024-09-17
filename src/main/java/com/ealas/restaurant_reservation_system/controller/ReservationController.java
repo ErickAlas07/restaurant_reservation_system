@@ -47,9 +47,7 @@ public class ReservationController {
 
     // Actualizar una reserva existente
     @PutMapping("/{id}")
-    public ResponseEntity<ReservationDto> updateReservation(
-            @PathVariable("id") Long id,
-            @RequestBody ReservationDto reservationDto) {
+    public ResponseEntity<ReservationDto> updateReservation(@PathVariable("id") Long id, @RequestBody ReservationDto reservationDto) {
         Optional<ReservationDto> updatedReservation = reservationService.update(id, reservationDto);
         return updatedReservation.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }

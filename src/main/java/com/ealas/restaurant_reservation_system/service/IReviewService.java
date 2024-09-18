@@ -12,7 +12,7 @@ public interface IReviewService {
 
     Optional<Review> delete(Long id);
 
-    public List<Review> findReviewByUsername();
+    List<Review> findReviewByUsername();
 
-    public List<Review> findHistoryByUserName(String username);
+    List<Review> findHistoryByUserName(String username);
 }

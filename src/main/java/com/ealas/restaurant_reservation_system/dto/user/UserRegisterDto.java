@@ -1,6 +1,10 @@
-package com.ealas.restaurant_reservation_system.dto;
+package com.ealas.restaurant_reservation_system.dto.user;
 
+import com.ealas.restaurant_reservation_system.entity.Role;
+import com.ealas.restaurant_reservation_system.validation.user.ExistsEmail;
+import com.ealas.restaurant_reservation_system.validation.user.ExistsUsername;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -13,6 +17,7 @@ public class UserRegisterDto {
 
     @NotBlank
     @Size(min = 4, max = 12)
+    @ExistsUsername
     private String username;
 
     @NotBlank
@@ -21,5 +26,8 @@ public class UserRegisterDto {
 
     @NotBlank
     @Email
+    @ExistsEmail
     private String email;
+
+    private boolean admin;
 }

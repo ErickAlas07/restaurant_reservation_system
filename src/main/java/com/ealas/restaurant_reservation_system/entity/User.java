@@ -4,10 +4,7 @@ import com.ealas.restaurant_reservation_system.enums.Gender;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -25,17 +22,14 @@ public  class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-  /*  @Column(unique = true)
-    @NotBlank
-    @Size(min = 4, max = 12)*/
+
+    @Column(unique = true)
     private String username;
 
     @NotBlank
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
-//    @NotBlank
-//    @Email
     @Column(unique = true)
     private String email;
 
@@ -43,6 +37,7 @@ public  class User {
 
     private String lastname;
 
+    @Column(unique = true)
     private String phone;
 
     private String address;

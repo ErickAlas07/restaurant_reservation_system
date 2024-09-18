@@ -1,5 +1,6 @@
 package com.ealas.restaurant_reservation_system.repository;
 
+import com.ealas.restaurant_reservation_system.dto.user.UserDto;
 import com.ealas.restaurant_reservation_system.entity.Review;
 import com.ealas.restaurant_reservation_system.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;

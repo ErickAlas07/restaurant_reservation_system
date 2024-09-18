@@ -39,6 +39,7 @@ public class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/menus").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/menus/{id}").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/menus/{id}").hasAnyRole("ADMIN")
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilter(new JwtAuthenticationFilter(authenticationManager()))
                 .addFilter(new JwtValidationFilter(authenticationManager()))

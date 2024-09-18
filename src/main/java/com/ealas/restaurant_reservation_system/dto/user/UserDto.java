@@ -1,4 +1,4 @@
-package com.ealas.restaurant_reservation_system.dto;
+package com.ealas.restaurant_reservation_system.dto.user;
 
 import com.ealas.restaurant_reservation_system.enums.Gender;
 import jakarta.persistence.EnumType;
@@ -8,7 +8,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UserUpdateDto {
+public class UserDto {
+
+    private String username;
 
     private String name;
 

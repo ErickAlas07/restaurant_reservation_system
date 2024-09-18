@@ -1,12 +1,15 @@
 package com.ealas.restaurant_reservation_system.service.impl;
 
-import com.ealas.restaurant_reservation_system.dto.UserUpdateDto;
+import com.ealas.restaurant_reservation_system.dto.user.UserDto;
+import com.ealas.restaurant_reservation_system.dto.user.UserRegisterDto;
+import com.ealas.restaurant_reservation_system.dto.user.UserUpdateDto;
 import com.ealas.restaurant_reservation_system.entity.Role;
 import com.ealas.restaurant_reservation_system.entity.User;
 import com.ealas.restaurant_reservation_system.exceptions.ResourceNotFoundException;
 import com.ealas.restaurant_reservation_system.repository.IRoleRepository;
 import com.ealas.restaurant_reservation_system.repository.IUserRepository;
 import com.ealas.restaurant_reservation_system.service.IUserService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -39,36 +42,77 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     @Transactional
-    public User save(User user) {
+    public UserRegisterDto save(UserRegisterDto userRegisterDto) {
+        // Crear una nueva entidad User
+        User userEntity = new User();
+
+        // Asignar el rol USER por defecto
         Optional<Role> optionalRoleUser = roleRepository.findByName("ROLE_USER");
         List<Role> roles = new ArrayList<>();
-
         optionalRoleUser.ifPresent(roles::add);
 
-        if(user.isAdmin()){
+        // Si es admin, asignar también el rol de admin
+        if (userRegisterDto.isAdmin()) {
             Optional<Role> optionalRoleAdmin = roleRepository.findByName("ROLE_ADMIN");
             optionalRoleAdmin.ifPresent(roles::add);
         }
 
-        user.setRoles(roles);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        // Asignar los roles a la entidad
+        userEntity.setRoles(roles);
+        userEntity.setCreatedAt(new Date());
+
+        // Encriptar la contraseña
+        String encodedPassword = passwordEncoder.encode(userRegisterDto.getPassword());
+        userEntity.setPassword(encodedPassword);
+
+        // Copiar otras propiedades del DTO a la entidad
+        BeanUtils.copyProperties(userRegisterDto, userEntity, "password", "roles");
+
+        // Guardar el usuario en la base de datos
+        User savedUser = userRepository.save(userEntity);
+
+        // Mapear la entidad guardada de nuevo al DTO
+        return mapUserToRegisterDto(savedUser);
     }
 
     @Transactional
     @Override
-    public Optional<User> update(Long id, UserUpdateDto userUpdateDto) {
-        return userRepository.findById(id).map(existingUser -> {
-            existingUser.setName(userUpdateDto.getName());
-            existingUser.setLastname(userUpdateDto.getLastname());
-            existingUser.setEmail(userUpdateDto.getEmail());
-            existingUser.setPhone(userUpdateDto.getPhone());
-            existingUser.setAddress(userUpdateDto.getAddress());
-            existingUser.setGender(userUpdateDto.getGender());
-            existingUser.setLastLogin(new Date());
+    public UserRegisterDto register(UserRegisterDto userRegisterDto) {
+        // Utiliza el método save para realizar el registro
+        return save(userRegisterDto);
+    }
 
-            return userRepository.save(existingUser);
-        });
+    @Transactional
+    @Override
+    public Optional<UserUpdateDto> update(Long id, UserUpdateDto userUpdateDto) {
+            Optional<User> optionalUser = userRepository.findById(id);
+            if(optionalUser.isPresent()){
+                User userDb = optionalUser.get();
+                if(userUpdateDto.getName() != null){
+                    userDb.setName(userUpdateDto.getName());
+                }
+                if(userUpdateDto.getLastname() != null){
+                    userDb.setLastname(userUpdateDto.getLastname());
+                }
+                if(userUpdateDto.getEmail() != null){
+                    userDb.setEmail(userUpdateDto.getEmail());
+                }
+                if(userUpdateDto.getPhone() != null){
+                    userDb.setPhone(userUpdateDto.getPhone());
+                }
+                if(userUpdateDto.getAddress() != null){
+                    userDb.setAddress(userUpdateDto.getAddress());
+                }
+                if(userUpdateDto.getGender() != null){
+                    userDb.setGender(userUpdateDto.getGender());
+                }
+
+                User userUpdate = userRepository.save(userDb);
+
+                return Optional.of(mapUserToUpdateDto(userUpdate));
+            } else{
+                throw new ResourceNotFoundException("User not found with ID: " + id);
+            }
     }
 
     @Override
@@ -90,5 +134,36 @@ public class UserServiceImpl implements IUserService {
         String username = getCurrentUsername();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + username));
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public UserDto getAuthenticatedUser() {
+        String username = getCurrentUsername();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + username));
+
+        // Conversión de User a UserDto directamente en el servicio
+        return mapUserToDto(user);
+    }
+
+    private UserDto mapUserToDto(User user) {
+        UserDto userDto = new UserDto();
+        BeanUtils.copyProperties(user, userDto);
+
+        return userDto;
+    }
+
+    private UserUpdateDto mapUserToUpdateDto(User user) {
+        UserUpdateDto userUpdateDto = new UserUpdateDto();
+        BeanUtils.copyProperties(user, userUpdateDto);
+
+        return userUpdateDto;
+    }
+
+    private UserRegisterDto mapUserToRegisterDto(User user) {
+        UserRegisterDto userRegisterDto = new UserRegisterDto();
+        BeanUtils.copyProperties(user, userRegisterDto);
+        return userRegisterDto;
     }
 }

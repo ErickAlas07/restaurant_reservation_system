@@ -1,7 +1,6 @@
 package com.ealas.restaurant_reservation_system.controller;
 
-import com.ealas.restaurant_reservation_system.dto.UserRegisterDto;
-import com.ealas.restaurant_reservation_system.dto.UserUpdateDto;
+import com.ealas.restaurant_reservation_system.dto.user.*;
 import com.ealas.restaurant_reservation_system.entity.User;
 import com.ealas.restaurant_reservation_system.service.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,9 +42,9 @@ public class UserController {
     })
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<User> autenticarUsuario() {
-        User actualUsuario = userService.authUsuario();  // Obtener usuario autenticado
-        return ResponseEntity.ok(actualUsuario);  // Devolver datos del usuario autenticado
+    public ResponseEntity<UserDto> autenticarUsuario() {
+        UserDto userDto = userService.getAuthenticatedUser();
+        return ResponseEntity.ok(userDto);
     }
 
     @Operation(summary = "Register a new user", description = "Register a new user.")
@@ -58,15 +57,9 @@ public class UserController {
         if (result.hasErrors()) {
             return validation(result);
         }
+        UserRegisterDto user = userService.register(userRegisterDTO);
 
-        User user = new User();
-        user.setUsername(userRegisterDTO.getUsername());
-        user.setPassword(userRegisterDTO.getPassword());
-        user.setEmail(userRegisterDTO.getEmail());
-        user.setAdmin(false);
-        user.setCreatedAt(new Date());
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.save(user));
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
     @Operation(summary = "Update user", description = "Update user details (profile).")
@@ -82,7 +75,7 @@ public class UserController {
         }
 
         User currentUser = userService.authUsuario();
-        Optional<User> updatedUser = userService.update(currentUser.getId(), userUpdateDto);
+        Optional<UserUpdateDto> updatedUser = userService.update(currentUser.getId(), userUpdateDto);
 
         if (updatedUser.isPresent()) {
             return ResponseEntity.ok(updatedUser.get());

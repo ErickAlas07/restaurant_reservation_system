@@ -1,5 +1,6 @@
-package com.ealas.restaurant_reservation_system.dto;
+package com.ealas.restaurant_reservation_system.dto.restaurant;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -25,6 +26,7 @@ public class RestaurantDto {
     @Size(max = 50)
     private String city;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Integer capacity;
 
     private String openingHours;

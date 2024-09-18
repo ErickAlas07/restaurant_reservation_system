@@ -1,4 +1,4 @@
-package com.ealas.restaurant_reservation_system.dto;
+package com.ealas.restaurant_reservation_system.dto.reservation;
 
 import lombok.Getter;
 import lombok.Setter;

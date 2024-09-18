@@ -1,7 +1,6 @@
 package com.ealas.restaurant_reservation_system.controller;
 
-import com.ealas.restaurant_reservation_system.dto.MesaDto;
-import com.ealas.restaurant_reservation_system.entity.Mesa;
+import com.ealas.restaurant_reservation_system.dto.table.MesaDto;
 import com.ealas.restaurant_reservation_system.service.IMesaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -28,6 +27,7 @@ public class MesaController {
     @Operation(summary = "List all tables", description = "Returns a list of all tables")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "403", description = "Forbidden. You don't have permission to access this resource"),
             @ApiResponse(responseCode = "500", description = "Internal Server Error")
     })
     @GetMapping
@@ -39,6 +39,7 @@ public class MesaController {
     @Operation(summary = "Get table by ID", description = "Returns a table based on its ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "403", description = "Forbidden. You don't have permission to access this resource"),
             @ApiResponse(responseCode = "404", description = "Not Found")
     })
     @GetMapping("/{id}")
@@ -50,6 +51,7 @@ public class MesaController {
     @Operation(summary = "Create a new table", description = "Creates a new table")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Created"),
+            @ApiResponse(responseCode = "403", description = "Forbidden. You don't have permission to access this resource"),
             @ApiResponse(responseCode = "400", description = "Bad Request. Bad Syntax.")
     })
     @PostMapping
@@ -65,6 +67,7 @@ public class MesaController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "OK"),
             @ApiResponse(responseCode = "400", description = "Bad Request. Bad Syntax."),
+            @ApiResponse(responseCode = "403", description = "Forbidden. You don't have permission to access this resource"),
             @ApiResponse(responseCode = "404", description = "Not Found")
     })
     @PutMapping("/{id}")
@@ -76,28 +79,10 @@ public class MesaController {
         return mesaBD.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Delete a table", description = "Deletes a table based on its ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "No Content"),
-            @ApiResponse(responseCode = "404", description = "Not Found")
-    })
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        Optional<Mesa> mesaOptional = mesaService.delete(id);
-
-        if (mesaOptional.isPresent()) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
     private ResponseEntity<?> validation(BindingResult result) {
         Map<String, String> errors = new HashMap<>();
 
-        result.getFieldErrors().forEach(err -> {
-            errors.put(err.getField(), "El campo " + err.getField() + " " + err.getDefaultMessage());
-        });
+        result.getFieldErrors().forEach(err -> errors.put(err.getField(), "The field " + err.getField() + " " + err.getDefaultMessage()));
 
         return ResponseEntity.badRequest().body(errors);
     }

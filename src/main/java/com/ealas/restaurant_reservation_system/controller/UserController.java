@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,8 +32,8 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "The resource you were trying to reach is not found.")
     })
     @GetMapping
-    public List<User> list() {
-        return userService.findAll();
+    public ResponseEntity<List<UserDto>> list() {
+        return new ResponseEntity<>(userService.findAll(),HttpStatus.OK);
     }
 
     @Operation(summary = "Get user by ID", description = "Get authenticated user details.")

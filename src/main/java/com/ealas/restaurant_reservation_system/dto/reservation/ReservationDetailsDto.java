@@ -1,6 +1,6 @@
-package com.ealas.restaurant_reservation_system.dto;
+package com.ealas.restaurant_reservation_system.dto.reservation;
 
-import com.ealas.restaurant_reservation_system.enums.ReservationType;
+import com.ealas.restaurant_reservation_system.dto.event.EventDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

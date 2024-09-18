@@ -1,7 +1,7 @@
 package com.ealas.restaurant_reservation_system.service.impl;
 
 import com.ealas.restaurant_reservation_system.dto.PaymentDto;
-import com.ealas.restaurant_reservation_system.dto.ReservationDto;
+import com.ealas.restaurant_reservation_system.dto.reservation.ReservationDto;
 import com.ealas.restaurant_reservation_system.entity.Payment;
 import com.ealas.restaurant_reservation_system.entity.Reservation;
 import com.ealas.restaurant_reservation_system.entity.ReservationDetails;

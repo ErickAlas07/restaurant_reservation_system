@@ -1,6 +1,5 @@
-package com.ealas.restaurant_reservation_system.dto;
+package com.ealas.restaurant_reservation_system.dto.event;
 
-import com.ealas.restaurant_reservation_system.entity.Restaurant;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;

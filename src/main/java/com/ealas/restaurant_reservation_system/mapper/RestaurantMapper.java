@@ -1,6 +1,6 @@
 package com.ealas.restaurant_reservation_system.mapper;
 
-import com.ealas.restaurant_reservation_system.dto.RestaurantDto;
+import com.ealas.restaurant_reservation_system.dto.restaurant.RestaurantDto;
 import com.ealas.restaurant_reservation_system.entity.Restaurant;
 
 public class RestaurantMapper {

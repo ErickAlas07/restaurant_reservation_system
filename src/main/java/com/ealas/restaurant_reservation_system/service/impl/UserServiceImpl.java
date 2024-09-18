@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements IUserService {
@@ -36,28 +37,26 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<User> findAll() {
-        return userRepository.findAll();
+    public List<UserDto> findAll() {
+        return userRepository.findAll().stream()
+                .map(this::mapUserToDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public UserRegisterDto save(UserRegisterDto userRegisterDto) {
-        // Crear una nueva entidad User
         User userEntity = new User();
 
-        // Asignar el rol USER por defecto
         Optional<Role> optionalRoleUser = roleRepository.findByName("ROLE_USER");
         List<Role> roles = new ArrayList<>();
         optionalRoleUser.ifPresent(roles::add);
 
-        // Si es admin, asignar también el rol de admin
         if (userRegisterDto.isAdmin()) {
             Optional<Role> optionalRoleAdmin = roleRepository.findByName("ROLE_ADMIN");
             optionalRoleAdmin.ifPresent(roles::add);
         }
 
-        // Asignar los roles a la entidad
         userEntity.setRoles(roles);
         userEntity.setCreatedAt(new Date());
 
@@ -68,17 +67,13 @@ public class UserServiceImpl implements IUserService {
         // Copiar otras propiedades del DTO a la entidad
         BeanUtils.copyProperties(userRegisterDto, userEntity, "password", "roles");
 
-        // Guardar el usuario en la base de datos
         User savedUser = userRepository.save(userEntity);
-
-        // Mapear la entidad guardada de nuevo al DTO
         return mapUserToRegisterDto(savedUser);
     }
 
     @Transactional
     @Override
     public UserRegisterDto register(UserRegisterDto userRegisterDto) {
-        // Utiliza el método save para realizar el registro
         return save(userRegisterDto);
     }
 

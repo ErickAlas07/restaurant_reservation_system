@@ -1,6 +1,6 @@
 package com.ealas.restaurant_reservation_system.service.impl;
 
-import com.ealas.restaurant_reservation_system.dto.EventDto;
+import com.ealas.restaurant_reservation_system.dto.event.EventDto;
 import com.ealas.restaurant_reservation_system.entity.Event;
 import com.ealas.restaurant_reservation_system.exceptions.ResourceAlreadyExistsException;
 import com.ealas.restaurant_reservation_system.exceptions.ResourceNotFoundException;

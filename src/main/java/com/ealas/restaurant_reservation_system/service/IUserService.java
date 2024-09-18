@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface IUserService {
     UserRegisterDto save(UserRegisterDto user);
 
-    List<User> findAll();
+    List<UserDto> findAll();
 
     Optional<UserUpdateDto> update(Long id, UserUpdateDto userUpdateDto);
 

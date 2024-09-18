@@ -1,5 +1,6 @@
 package com.ealas.restaurant_reservation_system.dto;
 
+import com.ealas.restaurant_reservation_system.dto.reservation.ReservationDto;
 import com.ealas.restaurant_reservation_system.enums.PaymentMethod;
 import com.ealas.restaurant_reservation_system.enums.PaymentStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;

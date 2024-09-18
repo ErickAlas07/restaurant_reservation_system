@@ -1,9 +1,9 @@
 package com.ealas.restaurant_reservation_system.service.impl;
 
-import com.ealas.restaurant_reservation_system.dto.EventDto;
-import com.ealas.restaurant_reservation_system.dto.ReservationDetailsDto;
-import com.ealas.restaurant_reservation_system.dto.ReservationDto;
-import com.ealas.restaurant_reservation_system.dto.ReservationTableDto;
+import com.ealas.restaurant_reservation_system.dto.event.EventDto;
+import com.ealas.restaurant_reservation_system.dto.reservation.ReservationDetailsDto;
+import com.ealas.restaurant_reservation_system.dto.reservation.ReservationDto;
+import com.ealas.restaurant_reservation_system.dto.reservation.ReservationTableDto;
 import com.ealas.restaurant_reservation_system.entity.*;
 import com.ealas.restaurant_reservation_system.enums.ReservationType;
 import com.ealas.restaurant_reservation_system.enums.StatusReservation;

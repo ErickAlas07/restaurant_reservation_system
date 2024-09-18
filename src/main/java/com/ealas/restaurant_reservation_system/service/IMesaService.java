@@ -1,7 +1,6 @@
 package com.ealas.restaurant_reservation_system.service;
 
-import com.ealas.restaurant_reservation_system.dto.MesaDto;
-import com.ealas.restaurant_reservation_system.entity.Menu;
+import com.ealas.restaurant_reservation_system.dto.table.MesaDto;
 import com.ealas.restaurant_reservation_system.entity.Mesa;
 
 import java.util.List;
@@ -15,6 +14,4 @@ public interface IMesaService {
     MesaDto save(MesaDto mesaDTO);
 
     Optional<MesaDto> update(Long id, MesaDto mesaDTO);
-
-    Optional<Mesa> delete(Long id);
 }

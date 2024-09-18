@@ -1,6 +1,6 @@
-package com.ealas.restaurant_reservation_system.dto;
+package com.ealas.restaurant_reservation_system.dto.reservation;
 
-import com.ealas.restaurant_reservation_system.entity.*;
+import com.ealas.restaurant_reservation_system.dto.event.EventDto;
 import com.ealas.restaurant_reservation_system.enums.SpecialOccasion;
 import com.ealas.restaurant_reservation_system.enums.StatusReservation;
 import lombok.AllArgsConstructor;
@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 @Getter
 @Setter

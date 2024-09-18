@@ -1,6 +1,6 @@
 package com.ealas.restaurant_reservation_system.controller;
 
-import com.ealas.restaurant_reservation_system.dto.RestaurantDto;
+import com.ealas.restaurant_reservation_system.dto.restaurant.RestaurantDto;
 import com.ealas.restaurant_reservation_system.service.IRestaurantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

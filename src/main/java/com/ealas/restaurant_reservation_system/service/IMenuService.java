@@ -1,18 +1,19 @@
 package com.ealas.restaurant_reservation_system.service;
 
+import com.ealas.restaurant_reservation_system.dto.menu.MenuDto;
 import com.ealas.restaurant_reservation_system.entity.Menu;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface IMenuService {
-    List<Menu> findAll();
+    List<MenuDto> findAll();
 
-    Optional<Menu> findById(Long id);
+    Optional<MenuDto> findById(Long id);
 
-    Menu save (Menu menu);
+    MenuDto save (MenuDto menu);
 
-    Optional<Menu> update(Long id, Menu menu);
+    Optional<MenuDto> update(Long id, MenuDto menuDto);
 
-    Optional<Menu> delete(Long id);
+    List<MenuDto> findAllAvailable();
 }

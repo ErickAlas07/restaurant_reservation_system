@@ -1,6 +1,6 @@
 package com.ealas.restaurant_reservation_system.service.impl;
 
-import com.ealas.restaurant_reservation_system.dto.MesaDto;
+import com.ealas.restaurant_reservation_system.dto.table.MesaDto;
 import com.ealas.restaurant_reservation_system.entity.Mesa;
 import com.ealas.restaurant_reservation_system.entity.Restaurant;
 import com.ealas.restaurant_reservation_system.exceptions.ResourceAlreadyExistsException;
@@ -10,8 +10,6 @@ import com.ealas.restaurant_reservation_system.repository.IRestaurantRepository;
 import com.ealas.restaurant_reservation_system.service.IMesaService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,7 +51,7 @@ public class MesaServiceImpl implements IMesaService {
             Mesa mesaDb = mesaRepository.save(mesa);
             return toDto(mesaDb);
         } else {
-            throw new ResourceAlreadyExistsException("Table with number :" + mesaDTO.getTableNumber() +  " already exists.");
+            throw new ResourceAlreadyExistsException("Table with number :" + mesaDTO.getTableNumber() + " already exists.");
         }
     }
 
@@ -78,20 +76,6 @@ public class MesaServiceImpl implements IMesaService {
         } else {
             throw new ResourceNotFoundException("Table not found with id " + id);
         }
-    }
-
-    @Transactional
-    @Override
-    public Optional<Mesa> delete(Long id) {
-        Optional<Mesa> mesaOptional = mesaRepository.findById(id);
-        if (mesaOptional.isPresent()) {
-            Mesa mesa = mesaOptional.get();
-            if (!mesa.getReservationDetails().isEmpty()) {
-                throw new RuntimeException("Table cannot be deleted as it is associated with existing reservations");
-            }
-            mesaRepository.delete(mesa);
-        }
-        return mesaOptional;
     }
 
     private MesaDto toDto(Mesa mesa) {

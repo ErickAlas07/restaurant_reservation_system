@@ -1,15 +1,14 @@
 package com.ealas.restaurant_reservation_system.service.impl;
 
 import com.ealas.restaurant_reservation_system.dto.event.EventDto;
-import com.ealas.restaurant_reservation_system.dto.reservation.ReservationDetailsDto;
-import com.ealas.restaurant_reservation_system.dto.reservation.ReservationDto;
-import com.ealas.restaurant_reservation_system.dto.reservation.ReservationTableDto;
+import com.ealas.restaurant_reservation_system.dto.reservation.*;
 import com.ealas.restaurant_reservation_system.entity.*;
 import com.ealas.restaurant_reservation_system.enums.ReservationType;
 import com.ealas.restaurant_reservation_system.enums.StatusReservation;
 import com.ealas.restaurant_reservation_system.exceptions.ResourceNotFoundException;
+import com.ealas.restaurant_reservation_system.exceptions.reservation.ReservationFailedException;
+import com.ealas.restaurant_reservation_system.exceptions.table.TableFailedException;
 import com.ealas.restaurant_reservation_system.repository.*;
-import com.ealas.restaurant_reservation_system.service.EmailService;
 import com.ealas.restaurant_reservation_system.service.IReservationService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,37 +21,33 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class ReservationServiceImpl implements IReservationService {
 
-    @Autowired
-    private IReservationRepository reservationRepository;
+    private final IReservationRepository reservationRepository;
+    private final IEventRepository eventRepository;
+    private final IMesaRepository mesaRepository;
+    private final IUserRepository userRepository;
+    private final IRestaurantRepository restaurantRepository;
+    private final JavaMailSenderImpl mailSender;
 
     @Autowired
-    private IEventRepository eventRepository;
-
-    @Autowired
-    private IMesaRepository mesaRepository;
-
-    @Autowired
-    private IUserRepository userRepository;
-
-    @Autowired
-    private IRestaurantRepository restaurantRepository;
-
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private JavaMailSenderImpl mailSender;
+    public ReservationServiceImpl(IReservationRepository reservationRepository, IEventRepository eventRepository, IMesaRepository mesaRepository,
+                                  IUserRepository userRepository, IRestaurantRepository restaurantRepository, JavaMailSenderImpl mailSender) {
+        this.reservationRepository = reservationRepository;
+        this.eventRepository = eventRepository;
+        this.mesaRepository = mesaRepository;
+        this.userRepository = userRepository;
+        this.restaurantRepository = restaurantRepository;
+        this.mailSender = mailSender;
+    }
 
     @Transactional(readOnly = true)
     @Override
@@ -66,190 +61,197 @@ public class ReservationServiceImpl implements IReservationService {
     @Override
     public Optional<ReservationDto> findById(Long id) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("No se ha encontrado reservación con ID: " + id));
         return Optional.of(toDto(reservation));
     }
 
     @Transactional
     @Override
-    public ReservationDto save(ReservationDto reservationDto) {
+    public ReservationDto saveReservationTable(ReservationTableDto reservationDto) {
         Reservation reservation = toEntity(reservationDto);
-
-        //Lógica para validar el pllazo de la reserva
-        LocalDateTime currentDate = LocalDateTime.now(ZoneId.of("UTC"));
-
-        // Convertir la fecha de la reserva (Date) a LocalDateTime
-        LocalDateTime reservationDate = reservation.getReservationDate()
-                .toInstant()
-                .atZone(ZoneId.of("UTC"))
-                .toLocalDateTime();
-
-        // Validar si la reserva es con al menos 24 horas de anticipación
-        long hoursDifference = Duration.between(currentDate, reservationDate).toHours();
-        if (hoursDifference < 24) {
-            throw new RuntimeException("Reservations must be made at least 24 hours in advance.");
+        //Validación para que la fecha de la reserva no sea anterior a la fecha actual
+        validateReservationDate(reservation.getReservationDate());
+        // Validar el plazo de la reserva
+        validateReservationTime(reservation);
+        // Asignar el usuario y el restaurante por defecto
+        setDefaultUserAndRestaurant(reservation);
+        //Validación para el máximo de reservas permitidas por usuario
+        validateRecentReservations(reservation.getUser().getId());
+        validateTableReservation(reservation.getUser().getId(), reservation.getReservationDate(), reservation.getReservationTime());
+        // Validar conflictos con eventos
+        validateEventConflict(reservation.getReservationDate(), reservation.getReservationTime(), reservation.getRestaurant().getId());
+        // Establecer el estado de la reserva si no se proporciona
+        if (reservation.getStatus() == null) {
+            reservation.setStatus(StatusReservation.PENDING);
         }
+        reservation.setCreatedAT(LocalDateTime.now());
 
-        //Lógica para asignar el usuario y el restaurante por defecto
-        String username = getCurrentUsername();
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with username " + username));
-        reservation.setUser(user);
+        // Asignar detalles de reserva
+        assignReservationDetails(reservation);
+        Reservation reservationDb = reservationRepository.save(reservation);
 
-        Restaurant restaurant = restaurantRepository.findById(1L)
-                .orElseThrow(() -> new ResourceNotFoundException("Default restaurant not found"));
-        reservation.setRestaurant(restaurant);
+        // Enviar el correo de confirmación
+        sendConfirmationEmail(reservationDb.getUser().getEmail(), reservationDb, "created");
+        return toDto(reservationDb);
+    }
+
+    @Transactional
+    @Override
+    public ReservationEventDto saveReservationEvent(ReservationEventDto reservationDto) {
+        Reservation reservation = toEntity(reservationDto);
+        // Asignar el usuario y el restaurante por defecto
+        setDefaultUserAndRestaurant(reservation);
 
         // Establecer el estado de la reserva si no se proporciona
         if (reservation.getStatus() == null) {
             reservation.setStatus(StatusReservation.PENDING);
         }
-
-        // Asignar el evento si se proporciona
+        // Asignar el evento si se proporciona en el DTO
         if (reservationDto.getEventId() != null) {
             Event event = eventRepository.findById(reservationDto.getEventId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Event not found with id " + reservationDto.getEventId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("No se ha encontrado el evento con ID: " + reservationDto.getEventId()));
             reservation.setEvent(event);
+            event.setCapacity(event.getCapacity() - reservation.getPeople());
+            // Asignar la fecha y la hora del evento a la reserva
+            reservation.setReservationDate(event.getEventDate());
+            reservation.setReservationTime(event.getStartTime());
         }
-        assignReservationDetails(reservation);
+        reservation.setCreatedAT(LocalDateTime.now());
 
+        //Validación para el máximo de reservas permitidas por usuario
+        validateMaxEventReservations(reservation.getUser().getId(), reservationDto.getEventId());
+        // Validar el plazo de la reserva
+        validateReservationTime(reservation);
+        // Asignar detalles de reserva
+        assignReservationDetails(reservation);
         Reservation reservationDb = reservationRepository.save(reservation);
 
-        // Enviar el correo de recordatorio
-        String subject = "Nueva reserva en el restaurante";
-        String text = "Estimado/a " + user.getUsername() + ",\n\n" +
-                "Gracias por realizar una reserva en nuestro restaurante. " +
-                "Te recordamos que debes confirmar tu reserva antes de " + reservation.getReservationDate() +
-                ", de lo contrario será cancelada automáticamente.\n\n" +
-                "Detalles de tu reserva:\n" +
-                "Fecha y hora: " + reservation.getReservationDate() + "\n" +
-                "Número de personas: " + reservation.getPeople() + "\n" +
-                "Notas: " + reservation.getNotes() + "\n\n" +
-                "¡Esperamos verte pronto!\n" +
-                "El equipo del restaurante";
-
-        emailService.sendReservationReminder(user.getEmail(), subject, text);
-
-        return toDto(reservationDb);
+        // Enviar el correo de confirmación
+        sendConfirmationEmail(reservationDb.getUser().getEmail(), reservationDb, "created");
+        return toEventDto(reservationDb);
     }
 
     @Transactional
     @Override
     public Optional<ReservationDto> update(Long id, ReservationDto reservationDto) {
         Optional<Reservation> reservationOptional = reservationRepository.findById(id);
+
         if (reservationOptional.isPresent()) {
             Reservation reservationDb = reservationOptional.get();
-            if (reservationDto.getReservationDate() != null)
-                reservationDb.setReservationDate(reservationDto.getReservationDate());
-            if (reservationDto.getOccasion() != null) reservationDb.setOccasion(reservationDto.getOccasion());
-            if (reservationDto.getNotes() != null) reservationDb.setNotes(reservationDto.getNotes());
-            if (reservationDto.getStatus() != null) reservationDb.setStatus(reservationDto.getStatus());
-            if (reservationDto.getEventId() != null) {
-                Event event = eventRepository.findById(reservationDto.getEventId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Event not found with id " + reservationDto.getEventId()));
-                reservationDb.setEvent(event);
+            // Verificar si el estado de la reserva es "PENDIENTE"
+            if (!reservationDb.getStatus().equals(StatusReservation.PENDING)) {
+                throw new ReservationFailedException("Solo se pueden actualizar reservas con estado PENDIENTE.");
             }
-
-            if (reservationDto.getPeople() != null && reservationDto.getPeople().equals(reservationDb.getPeople())) {
-                reservationDb.setPeople(reservationDto.getPeople());
-                assignReservationDetails(reservationDb);
-            }
+            // Actualizar los campos de la reserva
+            updateReservationFields(reservationDb, reservationDto);
+            // Guardar los cambios
             Reservation reservationUpdated = reservationRepository.save(reservationDb);
 
-            if (reservationUpdated.getStatus().equals(StatusReservation.CONFIRMED)) {
-                // Enviar correo electrónico al usuario
-                sendConfirmationEmail(reservationDb.getUser().getEmail(), reservationUpdated, "confirmed");
-            } else {
-                // Enviar correo electrónico al usuario
-                sendConfirmationEmail(reservationDb.getUser().getEmail(), reservationUpdated, "updated");
-            }
-
+            // Enviar correo electrónico al usuario
+            sendConfirmationEmail(reservationUpdated.getUser().getEmail(), reservationUpdated, "updated");
             return Optional.of(toDto(reservationUpdated));
         } else {
-            throw new RuntimeException("Reservation not found with id " + id);
+            throw new ResourceNotFoundException("No se ha encontrado el evento con ID: " + id);
         }
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public ReservationDetailsDto getReservationDetails(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró ninguna reservación asociada con ID:  " + reservationId));
+
+        return buildReservationDetailsDto(reservation);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public ReservationDetailsDto getReservationDetails(Long reservationId) {
-        Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id " + reservationId));
-
-        ReservationDetailsDto responseDto = new ReservationDetailsDto();
-        responseDto.setReservationId(reservation.getId());
-        responseDto.setReservationDate(reservation.getReservationDate().toString());
-        responseDto.setOccasion(String.valueOf(reservation.getOccasion()));
-        responseDto.setPeople(reservation.getPeople());
-        responseDto.setNotes(reservation.getNotes());
-
-        responseDto.setStatus(String.valueOf(reservation.getStatus()));
-
-        List<ReservationTableDto> tableDtos = reservation.getReservationDetails().stream()
-                .map(detail -> {
-                    ReservationTableDto tableDto = new ReservationTableDto();
-                    tableDto.setTableId(detail.getTable().getId());
-                    tableDto.setTableNumber(detail.getTable().getTableNumber());
-                    tableDto.setLocation(detail.getTable().getLocation());
-                    return tableDto;
-                }).collect(Collectors.toList());
-
-        responseDto.setTables(tableDtos);
-
-        if (reservation.getEvent() != null) {
-            EventDto eventDto = new EventDto();
-            eventDto.setTitle(reservation.getEvent().getTitle());
-            eventDto.setDescription(reservation.getEvent().getDescription());
-            eventDto.setTicketPrice(reservation.getEvent().getTicketPrice());
-            eventDto.setEventDate(reservation.getEvent().getEventDate());
-
-            responseDto.setEvent(eventDto);
-        }
-
-        responseDto.setTotalPrice(reservation.getReservationDetails().stream()
-                .mapToDouble(ReservationDetails::getPrice)
-                .sum());
-
-        return responseDto;
+    public List<ReservationDto> findReservationsByDateRange(LocalDate startDate, LocalDate endDate) {
+        List<Reservation> reservations = reservationRepository.findAllByReservationDateBetween(startDate, endDate);
+        return reservations.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    //Métodos extras para la funcionalidad de la reserva
-    private String getCurrentUsername() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof UserDetails) {
-            return ((UserDetails) principal).getUsername();
+    private void validateReservationTime(Reservation reservation) {
+        // Obtener la fecha y hora actual
+        LocalDateTime currentDate = LocalDateTime.now(ZoneId.of("UTC"));
+
+        // Combinar la fecha y la hora de la reserva en LocalDateTime
+        LocalDate reservationDate = reservation.getReservationDate();
+        LocalTime reservationTime = reservation.getReservationTime();
+        LocalDateTime reservationDateTime = LocalDateTime.of(reservationDate, reservationTime);
+        // Calcular la diferencia en horas
+        long hoursDifference = Duration.between(currentDate, reservationDateTime).toHours();
+
+        // Validar si la reserva es con al menos 24 horas de anticipación
+        if (hoursDifference < 24) {
+            throw new RuntimeException("Las reservas deben realizarse con al menos 24 horas de antelación.");
         }
-        return principal.toString();
+    }
+
+    private void setDefaultUserAndRestaurant(Reservation reservation) {
+        String username = getCurrentUsername();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con nombre de usuario: " + username));
+        reservation.setUser(user);
+
+        Restaurant restaurant = restaurantRepository.findById(1L)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el restaurante predeterminado."));
+        reservation.setRestaurant(restaurant);
+    }
+
+    private void updateReservationFields(Reservation reservationDb, ReservationDto reservationDto) {
+        if (reservationDto.getReservationDate() != null)
+            reservationDb.setReservationDate(reservationDto.getReservationDate());
+        if (reservationDto.getReservationTime() != null)
+            reservationDb.setReservationTime(reservationDto.getReservationTime());
+        if (reservationDto.getOccasion() != null) reservationDb.setOccasion(reservationDto.getOccasion());
+        if (reservationDto.getNotes() != null) reservationDb.setNotes(reservationDto.getNotes());
+        if (reservationDto.getStatus() != null) reservationDb.setStatus(reservationDto.getStatus());
+        if (reservationDto.getEventId() != null) {
+            Event event = eventRepository.findById(reservationDto.getEventId())
+                    .orElseThrow(() -> new ResourceNotFoundException("No se ha encontrado el evento: " + reservationDto.getEvent().getTitle()));
+            reservationDb.setEvent(event);
+        }
+        if (reservationDto.getPeople() != null && reservationDto.getPeople().equals(reservationDb.getPeople())) {
+            reservationDb.setPeople(reservationDto.getPeople());
+            assignReservationDetails(reservationDb);
+        }
     }
 
     private void assignReservationDetails(Reservation reservation) {
-        Pageable pageable = PageRequest.of(0, 1); // Limit to 1 result
+        Pageable pageable = PageRequest.of(0, 1);
         List<Mesa> tables = mesaRepository.findAvailableTable(reservation.getPeople(), pageable);
         if (tables.isEmpty()) {
-            throw new RuntimeException("No available tables for " + reservation.getPeople() + " people");
+            throw new TableFailedException("No hay mesas disponibles para " + reservation.getPeople() + " personas");
         }
-
-        List<ReservationDetails> details = new ArrayList<>();
-        for (Mesa table : tables) {
-            ReservationDetails detail = new ReservationDetails();
-            // Establecer el tipo de reserva basado en la presencia de un evento
-            if (reservation.getEvent() != null) {
-                detail.setReservationType(ReservationType.EVENT);
-                detail.setPrice(reservation.getEvent().getTicketPrice() * reservation.getPeople());
-            } else {
+        if (reservation.getReservationType() == ReservationType.TABLE) {
+            List<ReservationDetails> details = new ArrayList<>();
+            for (Mesa table : tables) {
+                ReservationDetails detail = new ReservationDetails();
                 detail.setReservationType(ReservationType.TABLE);
                 detail.setPrice(calculatePriceForTable(table, reservation));
+                detail.setReservation(reservation);
+                detail.setTable(table);
+                details.add(detail);
+                table.setAvailable(false);
+                mesaRepository.save(table);
             }
+            reservation.setReservationDetails(details);
 
-            detail.setReservation(reservation);
-            detail.setTable(table);
-            details.add(detail);
-
-            table.setAvailable(false);
-            mesaRepository.save(table);
+        } else if (reservation.getReservationType() == ReservationType.EVENT) {
+            for (Mesa table : tables) {
+                List<ReservationDetails> details = new ArrayList<>();
+                ReservationDetails detail = new ReservationDetails();
+                detail.setReservationType(ReservationType.EVENT);
+                detail.setPrice(reservation.getEvent().getTicketPrice() * reservation.getPeople());
+                detail.setReservation(reservation);
+                detail.setTable(table);
+                table.setAvailable(false);
+                details.add(detail);
+                reservation.setReservationDetails(details);
+            }
         }
-
-        reservation.setReservationDetails(details);
     }
 
     private double calculatePriceForTable(Mesa table, Reservation reservation) {
@@ -257,18 +259,18 @@ public class ReservationServiceImpl implements IReservationService {
         double extraPrice = 2.0;
         double OccasionPrice = 3.0;
         double totalPrice;
-        if (reservation.getNotes() != null && reservation.getOccasion() != null) {
-            totalPrice = fixedPrice + extraPrice + OccasionPrice;
-        } else {
-            totalPrice = fixedPrice + extraPrice;
-        }
+        totalPrice = fixedPrice + extraPrice + (reservation.getNotes() != null && reservation.getOccasion() != null ? OccasionPrice : 0);
         return totalPrice;
     }
 
     public void sendConfirmationEmail(String email, Reservation reservation, String action) {
-        String subject = action.equals("updated") ? "Tu reservación ha sido actualizada" : "Tu reservación ha sido confirmada";
-        String message = buildEmailMessage(reservation, action);
+        // Personaliza el asunto del correo según la acción
+        String subject = action.equals("updated")
+                ? "Tu reservación ha sido actualizada"
+                : "Nueva reservación creada";
 
+        // Construye el mensaje del correo según la acción
+        String message = buildEmailMessage(reservation, action);
         // Configuración del correo
         SimpleMailMessage emailMessage = new SimpleMailMessage();
         emailMessage.setTo(email);
@@ -278,47 +280,237 @@ public class ReservationServiceImpl implements IReservationService {
     }
 
     private String buildEmailMessage(Reservation reservation, String action) {
-        String message = action.equals("updated")
-                ? "Tu reservación ha sido actualizada con los siguientes detalles:\n\n"
-                : "Tu reservación ha sido confirmada con los siguientes detalles:\n\n";
+        // Construye el mensaje según si la acción es "created" o "updated"
+        String message;
+        if (action.equals("updated")) {
+            // Mensaje personalizado para actualización de reserva
+            message = "Estimado/a " + reservation.getUser().getUsername() + ",\n\n";
 
-        message += "Fecha de Reservación: " + reservation.getReservationDate() + "\n";
-        message += "Número de personas " + reservation.getPeople() + "\n";
-        message += "Ocasión Especial: " + reservation.getOccasion() + "\n";
-        message += "Notas extras: " + reservation.getNotes() + "\n";
-        message += reservation.getEvent() != null ? "Evento: " + reservation.getEvent().getTitle() + "\n" : "";
-        message += "Estado de reserva: " + reservation.getStatus() + "\n";
-        message += "Precio total: $" + reservation.getReservationDetails().stream()
-                .mapToDouble(ReservationDetails::getPrice)
-                .sum() + "\n\n";
-
+            if (reservation.getEvent() != null) {
+                message += "Has confirmado una reservación para el evento: \n\n" + reservation.getEvent().getTitle() + "\n" +
+                        "Fecha del evento: " + reservation.getEvent().getEventDate() + "\n" +
+                        "Hora de inicio: " + reservation.getEvent().getStartTime() + "\n" +
+                        "Hora de fin: " + reservation.getEvent().getEndTime() + "\n";
+                message += "Precio total: $" + reservation.getReservationDetails().stream()
+                        .mapToDouble(ReservationDetails::getPrice)
+                        .sum() + "\n";
+                message += "Estado de la reserva: " + reservation.getStatus() + "\n";
+                message += "Te recordamos que debes pagar tu reserva antes del " + reservation.getReservationDate() + "\n\n";
+            } else {
+                message += "Has confirmado una reservación para una mesa en nuestro restaurante.\n\n";
+                message += "Fecha de Reservación: " + reservation.getReservationDate() + "\n" +
+                        "Hora de Reservación: " + reservation.getReservationTime() + "\n" +
+                        "Reservación para: " + reservation.getPeople() + " personas\n";
+                if (reservation.getOccasion() != null)
+                    message += "Ocasión Especial: " + reservation.getOccasion() + "\n";
+                if (reservation.getNotes() != null) message += "Notas extras: " + reservation.getNotes() + "\n";
+                message += "Mesa asignada: " + reservation.getReservationDetails().get(0).getTable().getTableNumber() + "\n";
+            }
+            message += "Estado de reserva: " + reservation.getStatus() + "\n";
+            message += "Precio total: $" + reservation.getReservationDetails().stream()
+                    .mapToDouble(ReservationDetails::getPrice)
+                    .sum() + "\n\n";
+            message += "Te recordamos que debes pagar tu reserva antes del " + reservation.getReservationDate() + "\n\n";
+        } else {
+            // Mensaje personalizado para nueva reserva
+            message = "Estimado/a " + reservation.getUser().getUsername() + ",\n\n" +
+                    "Gracias por realizar una reserva en nuestro restaurante.\n" +
+                    "A continuación te mostramos los detalles de tu reserva:\n\n";
+            if (reservation.getEvent() != null) {
+                message += "Detalles del evento: \n\n" + reservation.getEvent().getTitle() + "\n" +
+                        "Fecha del evento: " + reservation.getEvent().getEventDate() + "\n" +
+                        "Hora de inicio: " + reservation.getEvent().getStartTime() + "\n" +
+                        "Hora de fin: " + reservation.getEvent().getEndTime() + "\n";
+                message += "Precio total: $" + reservation.getReservationDetails().stream()
+                        .mapToDouble(ReservationDetails::getPrice)
+                        .sum() + "\n";
+            } else {
+                message += "Fecha de Reservación: " + reservation.getReservationDate() + "\n" +
+                        "Hora de Reservación: " + reservation.getReservationTime() + "\n" +
+                        "Número de personas: " + reservation.getPeople() + "\n";
+                if (reservation.getOccasion() != null)
+                    message += "Ocasión Especial: " + reservation.getOccasion() + "\n";
+                if (reservation.getNotes() != null) message += "Notas extras: " + reservation.getNotes() + "\n";
+                message += "Precio total: $" + reservation.getReservationDetails().stream()
+                        .mapToDouble(ReservationDetails::getPrice)
+                        .sum() + "\n";
+                message += "Estado de reserva: " + reservation.getStatus() + "\n";
+                message += "Te recordamos que debes confirmar tu reserva antes de " + reservation.getReservationDate() +
+                        ", de lo contrario será cancelada automáticamente.\n\n";
+            }
+        }
+        message += "¡Gracias por elegirnos!\n\nAtentamente,\n" +
+                "El equipo de " + reservation.getRestaurant().getName();
         return message;
     }
+
+    private String getCurrentUsername() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetails) {
+            return ((UserDetails) principal).getUsername();
+        }
+        return principal.toString();
+    }
+
+    private void validateEventConflict(LocalDate reservationDate, LocalTime reservationTime, Long restaurantId) {
+        // Obtener los eventos en la fecha y restaurante especificados
+        List<Event> activeEvents = eventRepository.findByRestaurantIdAndDateAndTime(restaurantId, reservationDate, reservationTime);
+        // Si existe algún evento en conflicto
+        if (!activeEvents.isEmpty()) {
+            Event conflictEvent = activeEvents.get(0);
+            throw new ReservationFailedException("No se pueden realizar reservas de mesas durante el evento: " + conflictEvent.getTitle());
+        }
+    }
+
+    private void validateReservationDate(LocalDate reservationDate) {
+        LocalDate today = LocalDate.now();
+        if (reservationDate.isBefore(today)) {
+            throw new ReservationFailedException("No está permitido hacer reservaciones con fechas anteriores.");
+        }
+    }
+
+    public void validateTableReservation(Long userId, LocalDate reservationDate, LocalTime reservationTime) {
+        // Verificar si ya existe una reserva para la misma fecha y hora
+        boolean duplicateReservation = reservationRepository.existsByUserIdAndReservationDateAndReservationTime(userId, reservationDate, reservationTime);
+        if (duplicateReservation) {
+            throw new ReservationFailedException("Ya tienes una reserva para esa fecha y hora.");
+        }
+        // Validar máximo de 3 reservas en las últimas 24 horas
+        LocalDateTime last24Hours = LocalDateTime.now().minusHours(24);
+        LocalDate currentDate = last24Hours.toLocalDate();
+        LocalTime currentTime = last24Hours.toLocalTime();
+        int count24HourReservations = reservationRepository.countByUserIdAndReservationDateTimeAfter(userId, currentDate, currentTime);
+        if (count24HourReservations >= 3) {
+            throw new ReservationFailedException("Has alcanzado el máximo de 3 reservas en las últimas 24 horas.");
+        }
+    }
+
+    public void validateRecentReservations(Long userId) {
+        Optional<Reservation> lastReservationOpt = reservationRepository.findFirstByUserIdOrderByCreatedATDesc(userId);
+        if (lastReservationOpt.isPresent()) {
+            Reservation lastReservation = lastReservationOpt.get();
+            // Obtener el timestamp de la última reserva
+            LocalDateTime lastReservationCreatedAt = lastReservation.getCreatedAT();
+            // Verificar si han pasado al menos 5 horas desde la última reserva
+            if (lastReservationCreatedAt.isAfter(LocalDateTime.now().minusHours(5))) {
+                throw new ReservationFailedException("Solo puedes hacer otra reserva después de 5 horas de la última reserva.");
+            }
+        }
+    }
+
+    public void validateMaxEventReservations(Long userId, Long eventId) {
+        int count = reservationRepository.countByUserIdAndEventId(userId, eventId);
+        if (count >= 2) {
+            throw new ReservationFailedException("No puedes reservar más de 2 veces para el mismo evento.");
+        }
+    }
+
+    @Override
+    public double calculateTotalRevenue(List<ReservationDto> reservations) {
+        double totalRevenue = 0;
+
+        // Filtra solo las reservas confirmadas
+        List<ReservationDto> confirmedReservations = reservations.stream()
+                .filter(reservation -> reservation.getStatus() == StatusReservation.CONFIRMED)
+                .collect(Collectors.toList());
+
+        // Calcular las ganancias de mesas
+        double totalByTables = confirmedReservations.stream()
+                .flatMap(reservation -> {
+                    List<ReservationDetailsDto> details = reservation.getReservationDetails();
+                    return (details != null) ? details.stream() : Stream.empty();
+                })
+                .filter(detail -> detail.getReservationType() == ReservationType.TABLE)
+                .mapToDouble(ReservationDetailsDto::getTotalPrice)
+                .sum();
+
+        // Calcular las ganancias de eventos
+        double totalByEvents = confirmedReservations.stream()
+                .flatMap(reservation -> {
+                    List<ReservationDetailsDto> details = reservation.getReservationDetails();
+                    return (details != null) ? details.stream() : Stream.empty();
+                })
+                .filter(detail -> detail.getReservationType() == ReservationType.EVENT)
+                .mapToDouble(ReservationDetailsDto::getTotalPrice)
+                .sum();
+
+
+        totalRevenue = totalByTables + totalByEvents;
+
+        return totalRevenue;
+    }
+
 
     private ReservationDto toDto(Reservation reservation) {
         ReservationDto dto = new ReservationDto();
         BeanUtils.copyProperties(reservation, dto);
 
-        // Asignar el eventId si la reserva tiene un evento asociado
+        // Mapear el evento si existe
         if (reservation.getEvent() != null) {
-            dto.setEventId(reservation.getEvent().getId());
-
             EventDto eventDto = new EventDto();
-            dto.setEvent(eventDto);
+            BeanUtils.copyProperties(reservation.getEvent(), eventDto);
+            dto.setEvent(eventDto);  // Asignar el evento al DTO
         }
+
+        // Calcular el total basado en los detalles de la reserva
+        dto.setTotalAmount(reservation.getReservationDetails().stream()
+                .mapToDouble(ReservationDetails::getPrice) // Solo usamos el precio
+                .sum());
+
 
         return dto;
     }
 
-    private Reservation toEntity(ReservationDto reservationDto) {
+    private Reservation toEntity(ReservationTableDto reservationDto) {
         Reservation reservation = new Reservation();
         BeanUtils.copyProperties(reservationDto, reservation);
-
-        if (reservationDto.getEventId() != null) {
-            Event event = new Event();
-            event.setId(reservationDto.getEventId());
-            reservation.setEvent(event);
-        }
         return reservation;
+    }
+
+    private Reservation toEntity(ReservationEventDto reservationDto) {
+        Reservation reservation = new Reservation();
+        BeanUtils.copyProperties(reservationDto, reservation);
+        // El evento se maneja después en el servicio, por eso no se setea aquí
+        return reservation;
+    }
+
+    private ReservationDetailsDto buildReservationDetailsDto(Reservation reservation) {
+        ReservationDetailsDto dto = new ReservationDetailsDto();
+
+        dto.setReservationId(reservation.getId());
+        dto.setReservationDate(String.valueOf(reservation.getReservationDate()));
+        dto.setReservationTime(String.valueOf(reservation.getReservationTime()));
+
+        Optional.ofNullable(reservation.getPeople()).ifPresent(dto::setPeople);
+        Optional.ofNullable(reservation.getOccasion()).ifPresent(o -> dto.setOccasion(String.valueOf(o)));
+        Optional.ofNullable(reservation.getNotes()).ifPresent(dto::setNotes);
+
+        dto.setStatus(String.valueOf(reservation.getStatus()));
+
+        // Calcular el total del precio de los detalles de la reserva
+        dto.setTotalPrice(reservation.getReservationDetails().stream()
+                .mapToDouble(ReservationDetails::getPrice)
+                .sum());
+
+        // Mapear el evento si existe
+        Optional.ofNullable(reservation.getEvent()).ifPresent(event -> {
+            EventDto eventDto = new EventDto();
+            BeanUtils.copyProperties(event, eventDto);
+            dto.setEvent(eventDto);
+        });
+        return dto;
+    }
+
+    public ReservationEventDto toEventDto(Reservation reservation) {
+        ReservationEventDto dto = new ReservationEventDto();
+        BeanUtils.copyProperties(reservation, dto);
+
+        // Mapear el evento si existe
+        Optional.ofNullable(reservation.getEvent()).ifPresent(event -> {
+            EventDto eventDto = new EventDto();
+            BeanUtils.copyProperties(event, eventDto);
+            dto.setEvent(eventDto);  // Asignar el evento al DTO
+        });
+        return dto;
     }
 }

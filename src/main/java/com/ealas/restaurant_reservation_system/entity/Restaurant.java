@@ -7,12 +7,15 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.ToString;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "restaurant")
 @Data
+
 public class Restaurant {
 
     @Id
@@ -64,10 +67,12 @@ public class Restaurant {
     private List<Review> reviews;
 
     @JsonIgnoreProperties({"restaurant", "handler", "hibernateLazyInitializer"})
+    @ToString.Exclude
     @OneToMany(mappedBy = "restaurant")
     private List<Mesa> tables;
 
     @JsonIgnoreProperties({"restaurant", "handler", "hibernateLazyInitializer"})
+    @ToString.Exclude
     @OneToMany(mappedBy = "restaurant")
     private List<Event> events;
 

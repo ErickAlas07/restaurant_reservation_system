@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -23,7 +24,7 @@ public class ReservationSchedulerService {
 
     @Scheduled(fixedRate = 60000)
     public void cancelUnconfirmedReservations() {
-        LocalDateTime currentDate = LocalDateTime.now(ZoneId.of("America/El_Salvador"));
+        LocalDate currentDate = LocalDate.now(ZoneId.of("America/El_Salvador"));
 
         // Buscar reservas pendientes con fecha de reserva vencida
         List<Reservation> unconfirmedReservations = reservationRepository.findPendingReservations(currentDate);

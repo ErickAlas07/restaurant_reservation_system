@@ -76,7 +76,7 @@ public class PaymentPdfService {
                 table.addCell(methodCell);
 
                 // Monto total
-                PdfPCell amountCell = new PdfPCell(new Paragraph("$ " + String.valueOf(payment.getTotalAmount())));
+                PdfPCell amountCell = new PdfPCell(new Paragraph("$ " + payment.getTotalAmount()));
                 amountCell.setBorder(PdfPCell.NO_BORDER);
                 amountCell.setPadding(4);
                 amountCell.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -111,7 +111,6 @@ public class PaymentPdfService {
                 reservationIdCell.setHorizontalAlignment(Element.ALIGN_CENTER);
                 table.addCell(reservationIdCell);
             }
-
             document.add(table); // Añadir la tabla al documento
 
             document.close();

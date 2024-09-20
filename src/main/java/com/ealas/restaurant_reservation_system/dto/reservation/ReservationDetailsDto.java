@@ -1,6 +1,7 @@
 package com.ealas.restaurant_reservation_system.dto.reservation;
 
 import com.ealas.restaurant_reservation_system.dto.event.EventDto;
+import com.ealas.restaurant_reservation_system.enums.ReservationType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,12 +16,15 @@ import java.util.List;
 public class ReservationDetailsDto {
     private Long reservationId;
     private String reservationDate;
+    private String reservationTime;
     private String occasion;
     private int people;
     private String notes;
-    private List<ReservationTableDto> tables;
+    private List<DetailsTableDto> tables;
+    private ReservationType reservationType;
     private double totalPrice;
     private String status;
     private EventDto event;
+
 }
 

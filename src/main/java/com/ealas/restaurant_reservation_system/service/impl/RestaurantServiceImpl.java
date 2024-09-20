@@ -4,7 +4,7 @@ import com.ealas.restaurant_reservation_system.dto.restaurant.RestaurantDto;
 import com.ealas.restaurant_reservation_system.entity.Restaurant;
 import com.ealas.restaurant_reservation_system.exceptions.ResourceAlreadyExistsException;
 import com.ealas.restaurant_reservation_system.exceptions.ResourceNotFoundException;
-import com.ealas.restaurant_reservation_system.mapper.RestaurantMapper;
+import com.ealas.restaurant_reservation_system.dto.restaurant.mapper.RestaurantMapper;
 import com.ealas.restaurant_reservation_system.repository.IRestaurantRepository;
 import com.ealas.restaurant_reservation_system.service.IRestaurantService;
 import org.springframework.beans.factory.annotation.Autowired;

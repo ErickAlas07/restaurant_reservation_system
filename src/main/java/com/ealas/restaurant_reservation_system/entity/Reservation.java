@@ -1,5 +1,6 @@
 package com.ealas.restaurant_reservation_system.entity;
 
+import com.ealas.restaurant_reservation_system.enums.ReservationType;
 import com.ealas.restaurant_reservation_system.enums.SpecialOccasion;
 import com.ealas.restaurant_reservation_system.enums.StatusReservation;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -9,6 +10,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -23,9 +28,14 @@ public class Reservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAT;
+
     @Column(name = "reservation_date")
-    private Date reservationDate;
+    private LocalDate reservationDate;
+
+    @Column(name = "reservation_time")
+    private LocalTime reservationTime;
 
     @NotNull
     @Column(name = "number_of_people")
@@ -39,6 +49,10 @@ public class Reservation {
 
     @Column(name = "special_requests")
     private String notes;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reservation_type")
+    private ReservationType reservationType;
 
     @JsonIgnoreProperties({"reservations", "handler", "hibernateLazyInitializer"})
     @ManyToOne

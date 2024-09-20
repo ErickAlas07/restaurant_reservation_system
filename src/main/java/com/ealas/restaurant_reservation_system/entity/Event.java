@@ -8,7 +8,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.ToString;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -34,7 +37,13 @@ public class Event {
     @JsonFormat(pattern = "yyyy-MM-dd")
     @NotNull
     @Column(name = "event_date")
-    private Date eventDate;
+    private LocalDate eventDate;
+
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime startTime;
+
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime endTime;
 
     @NotNull
     @Column(name = "ticket_price")
@@ -45,6 +54,7 @@ public class Event {
 
     @JsonIgnoreProperties({"events", "handler", "hibernateLazyInitializer"})
     @ManyToOne
+    @ToString.Exclude
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 

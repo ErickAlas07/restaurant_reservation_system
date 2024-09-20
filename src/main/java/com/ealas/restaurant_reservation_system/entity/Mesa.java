@@ -37,6 +37,7 @@ public class Mesa {
 
     @JsonIgnoreProperties({"tables", "handler", "hibernateLazyInitializer"})
     @ManyToOne
+    @ToString.Exclude
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 

@@ -38,7 +38,7 @@ public class MesaServiceImpl implements IMesaService {
     @Override
     public Optional<MesaDto> findById(Long id) {
         Mesa mesa = mesaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Table not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("No se ha encontrado la mesa con ID: " + id));
         return Optional.of(toDto(mesa));
     }
 
@@ -51,7 +51,7 @@ public class MesaServiceImpl implements IMesaService {
             Mesa mesaDb = mesaRepository.save(mesa);
             return toDto(mesaDb);
         } else {
-            throw new ResourceAlreadyExistsException("Table with number :" + mesaDTO.getTableNumber() + " already exists.");
+            throw new ResourceAlreadyExistsException("Mesa con número: " + mesaDTO.getTableNumber() + " ya existe..");
         }
     }
 
@@ -68,13 +68,13 @@ public class MesaServiceImpl implements IMesaService {
 
             if (mesaDTO.getRestaurantId() != null) {
                 Restaurant restaurant = restaurantRepository.findById(mesaDTO.getRestaurantId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + mesaDTO.getRestaurantId()));
+                        .orElseThrow(() -> new ResourceNotFoundException("No se ha encontrado restaurante con ID:  " + mesaDTO.getRestaurantId()));
                 mesaDb.setRestaurant(restaurant);
             }
             Mesa mesaUpdated = mesaRepository.save(mesaDb);
             return Optional.of(toDto(mesaUpdated));
         } else {
-            throw new ResourceNotFoundException("Table not found with id " + id);
+            throw new ResourceNotFoundException("No se ha encontrado la mesa con ID: " + id);
         }
     }
 

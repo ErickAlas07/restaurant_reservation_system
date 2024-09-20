@@ -1,23 +1,23 @@
 package com.ealas.restaurant_reservation_system.dto.reservation;
 
+import com.ealas.restaurant_reservation_system.dto.event.EventDto;
 import com.ealas.restaurant_reservation_system.enums.ReservationType;
-import com.ealas.restaurant_reservation_system.enums.SpecialOccasion;
 import com.ealas.restaurant_reservation_system.enums.StatusReservation;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Date;
 
 @Getter
 @Setter
-public class ReservationTableDto {
+public class ReservationEventDto {
 
-    @NotNull
     private LocalDate reservationDate;
 
-    @NotNull
     private LocalTime reservationTime;
 
     @NotNull
@@ -25,9 +25,12 @@ public class ReservationTableDto {
 
     private StatusReservation status;
 
-    private SpecialOccasion occasion;
-
-    private String notes;
-
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private ReservationType reservationType;
+
+    @NotNull
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private Long eventId;
+
+    private EventDto event;
 }

@@ -7,6 +7,7 @@ import com.ealas.restaurant_reservation_system.entity.Reservation;
 import com.ealas.restaurant_reservation_system.entity.ReservationDetails;
 import com.ealas.restaurant_reservation_system.enums.PaymentStatus;
 import com.ealas.restaurant_reservation_system.enums.StatusReservation;
+import com.ealas.restaurant_reservation_system.exceptions.payment.PaymentFailedException;
 import com.ealas.restaurant_reservation_system.repository.IPaymentRepository;
 import com.ealas.restaurant_reservation_system.repository.IReservationRepository;
 import com.ealas.restaurant_reservation_system.service.EmailService;
@@ -48,7 +49,7 @@ public class PaymentServiceImpl implements IPaymentService {
         List<ReservationDetails> reservationDetails = reservation.getReservationDetails();
 
         if(reservation.getStatus() != StatusReservation.CONFIRMED) {
-            throw new RuntimeException("Reservation is not confirmed");
+            throw new PaymentFailedException("Reservation is not confirmed");
         }
 
         // Crear el pago y asignar los valores desde el DTO

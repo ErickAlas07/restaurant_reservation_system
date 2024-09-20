@@ -62,6 +62,8 @@ public class EventServiceImpl implements IEventService {
         if (eventDto.getEventDate() != null) eventDb.setEventDate(eventDto.getEventDate());
         if (eventDto.getTicketPrice() != null) eventDb.setTicketPrice(eventDto.getTicketPrice());
         if (eventDto.getCapacity() != null) eventDb.setCapacity(eventDto.getCapacity());
+        if(eventDto.getStartTime() != null) eventDb.setStartTime(eventDto.getStartTime());
+        if(eventDto.getEndTime() != null) eventDb.setEndTime(eventDto.getEndTime());
 
         Event eventUpdated = eventRepository.save(eventDb);
         return Optional.of(toDTO(eventUpdated));
@@ -90,6 +92,8 @@ public class EventServiceImpl implements IEventService {
         event.setEventDate(eventDto.getEventDate());
         event.setTicketPrice(eventDto.getTicketPrice());
         event.setCapacity(eventDto.getCapacity());
+        event.setStartTime(eventDto.getStartTime());
+        event.setEndTime(eventDto.getEndTime());
         return event;
     }
 }

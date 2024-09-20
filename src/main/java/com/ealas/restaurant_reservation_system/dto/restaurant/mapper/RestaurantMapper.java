@@ -1,4 +1,4 @@
-package com.ealas.restaurant_reservation_system.mapper;
+package com.ealas.restaurant_reservation_system.dto.restaurant.mapper;
 
 import com.ealas.restaurant_reservation_system.dto.restaurant.RestaurantDto;
 import com.ealas.restaurant_reservation_system.entity.Restaurant;

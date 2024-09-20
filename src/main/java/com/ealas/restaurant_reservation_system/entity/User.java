@@ -22,7 +22,6 @@ public  class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @Column(unique = true)
     private String username;
 
@@ -82,5 +81,11 @@ public  class User {
     @PrePersist
     public void prePersist() {
         this.enabled = true;
+    }
+
+    public User(String username, String password, List<Role> roles) {
+        this.username = username;
+        this.password = password;
+        this.roles = roles;
     }
 }

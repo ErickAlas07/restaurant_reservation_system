@@ -4,6 +4,7 @@ import com.ealas.restaurant_reservation_system.dto.reservation.ReservationDto;
 import com.ealas.restaurant_reservation_system.dto.reservation.ReservationDetailsDto;
 import com.ealas.restaurant_reservation_system.dto.reservation.ReservationEventDto;
 import com.ealas.restaurant_reservation_system.dto.reservation.ReservationTableDto;
+import com.ealas.restaurant_reservation_system.entity.Reservation;
 import com.ealas.restaurant_reservation_system.enums.ReservationType;
 import com.ealas.restaurant_reservation_system.service.IReservationService;
 import com.ealas.restaurant_reservation_system.service.pdf.ReservationPdfService;
@@ -106,6 +107,11 @@ public class ReservationController {
         return ResponseEntity.ok(reservationDetails);
     }
 
+    @Operation(summary = "Get reservations by date range", description = "Returns a list of reservations within a date range.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved list of reservations."),
+            @ApiResponse(responseCode = "404", description = "No reservations found.")
+    })
     @GetMapping("/report")
     public ResponseEntity<byte[]> generateReport(@RequestParam String startDate, @RequestParam String endDate) throws IOException {
         LocalDate start = LocalDate.parse(startDate);
@@ -115,6 +121,17 @@ public class ReservationController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=reservas_report.pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfContent);
+    }
+
+    @Operation(summary = "Cancel a reservation", description = "Cancels a reservation by its ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reservation canceled successfully."),
+            @ApiResponse(responseCode = "400", description = "Bad request. Reservation could not be canceled.")
+    })
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelReservation(@PathVariable Long id) {
+        ReservationDto canceledReservation = reservationService.cancelReservation(id);
+        return ResponseEntity.ok(canceledReservation);
     }
 
     private ResponseEntity<?> validation(BindingResult result) {

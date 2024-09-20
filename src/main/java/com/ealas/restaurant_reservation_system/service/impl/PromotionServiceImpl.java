@@ -43,7 +43,7 @@ public class PromotionServiceImpl implements IPromotionService {
     @Override
     public Optional<Promotion> update(Long id, Promotion promotion) {
         Promotion promotionDb = promotionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Promotion with id " + id + " not found."));
+                .orElseThrow(()-> new ResourceNotFoundException("No se ha encontrado promoción con ID: " + id));
 
         // Actualizar los campos de la promoción
         promotionDb.setTitle(promotion.getTitle());
@@ -59,7 +59,7 @@ public class PromotionServiceImpl implements IPromotionService {
     @Override
     public Optional<Promotion> delete(Long id) {
         Optional<Promotion> optionalPromotion = Optional.of(promotionRepository.findById(id)
-                .orElseThrow(()-> new ResourceNotFoundException("Promotion not found with id " + id)));
+                .orElseThrow(()-> new ResourceNotFoundException("No se ha encontrado promoción con ID: " + id)));
         optionalPromotion.ifPresent(promotionDb -> {
             promotionRepository.delete(promotionDb);
         });
@@ -70,6 +70,6 @@ public class PromotionServiceImpl implements IPromotionService {
     @Override
     public Optional<Promotion> findByTitle(String title) {
         return Optional.ofNullable(promotionRepository.findByTitle(title)
-                .orElseThrow(() -> new ResourceNotFoundException("Promotion with title '" + title + "' not found.")));
+                .orElseThrow(() -> new ResourceNotFoundException("Promoción: '" + title + "' no encontrada.")));
     }
 }

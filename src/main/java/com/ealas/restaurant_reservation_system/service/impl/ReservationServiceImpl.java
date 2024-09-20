@@ -9,6 +9,7 @@ import com.ealas.restaurant_reservation_system.exceptions.ResourceNotFoundExcept
 import com.ealas.restaurant_reservation_system.exceptions.reservation.ReservationFailedException;
 import com.ealas.restaurant_reservation_system.exceptions.table.TableFailedException;
 import com.ealas.restaurant_reservation_system.repository.*;
+import com.ealas.restaurant_reservation_system.service.EmailService;
 import com.ealas.restaurant_reservation_system.service.IReservationService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,16 +38,18 @@ public class ReservationServiceImpl implements IReservationService {
     private final IUserRepository userRepository;
     private final IRestaurantRepository restaurantRepository;
     private final JavaMailSenderImpl mailSender;
+    private final EmailService emailService;
 
     @Autowired
     public ReservationServiceImpl(IReservationRepository reservationRepository, IEventRepository eventRepository, IMesaRepository mesaRepository,
-                                  IUserRepository userRepository, IRestaurantRepository restaurantRepository, JavaMailSenderImpl mailSender) {
+                                  IUserRepository userRepository, IRestaurantRepository restaurantRepository, JavaMailSenderImpl mailSender, EmailService emailService) {
         this.reservationRepository = reservationRepository;
         this.eventRepository = eventRepository;
         this.mesaRepository = mesaRepository;
         this.userRepository = userRepository;
         this.restaurantRepository = restaurantRepository;
         this.mailSender = mailSender;
+        this.emailService = emailService;
     }
 
     @Transactional(readOnly = true)
@@ -434,10 +437,48 @@ public class ReservationServiceImpl implements IReservationService {
                 .mapToDouble(ReservationDetailsDto::getTotalPrice)
                 .sum();
 
-
         totalRevenue = totalByTables + totalByEvents;
 
         return totalRevenue;
+    }
+
+    @Override
+    public ReservationDto cancelReservation(Long id) {
+        // Obtener la reservación por ID
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservación no encontrada."));
+
+        // Obtener la fecha y hora actual
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("America/El_Salvador"));
+
+        // Combinar la fecha y hora de la reservación
+        LocalDateTime reservationDateTime = LocalDateTime.of(reservation.getReservationDate(), reservation.getReservationTime());
+
+        // Calcular la diferencia en horas
+        long hoursUntilReservation = java.time.Duration.between(now, reservationDateTime).toHours();
+
+        // Validar si faltan más de 3 horas para la reservación
+        if (hoursUntilReservation < 3) {
+            throw new RuntimeException("La reserva no se puede cancelar con menos de 3 horas de antelación.");
+        }
+
+        // Actualizar el estado de la reserva a 'CANCELLED'
+        reservation.setStatus(StatusReservation.CANCELED);
+        reservationRepository.save(reservation);
+
+        // Si la reservación tiene una mesa asignada, liberarla
+        reservation.getReservationDetails().forEach(detail -> {
+            Mesa mesa = detail.getTable();
+            if (mesa != null && mesa.isAvailable()) {
+                mesa.setAvailable(true);
+                mesaRepository.save(mesa);
+            }
+        });
+
+        System.out.println("La reserva con ID " + id + " ha sido cancelada y la mesa liberada.");
+
+        emailService.sendCancellationEmail(reservation.getUser(), reservation);
+        return toDto(reservation);
     }
 
 

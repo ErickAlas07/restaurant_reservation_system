@@ -15,11 +15,11 @@ public interface IUserService {
 
     Optional<UserUpdateDto> update(Long id, UserUpdateDto userUpdateDto);
 
-    public String getCurrentUsername();
+    String getCurrentUsername();
 
-    public Optional<User> findByUsername(String username);
+    Optional<User> findByUsername(String username);
 
-    public User authUsuario();
+    User authUsuario();
 
     UserDto getAuthenticatedUser();
 

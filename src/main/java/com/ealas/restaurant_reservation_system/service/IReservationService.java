@@ -27,4 +27,6 @@ public interface IReservationService {
 
     // Calcular las ganancias totales de una lista de reservas
     double calculateTotalRevenue(List<ReservationDto> reservations);
+
+    ReservationDto cancelReservation(Long id);
 }

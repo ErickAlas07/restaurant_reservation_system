@@ -39,17 +39,17 @@ public class PaymentServiceImpl implements IPaymentService {
     public PaymentDto createPayment(PaymentDto paymentDto) {
         // Buscar la reservación a partir del ID de la reservación en el DTO
         Reservation reservation = reservationRepository.findById(paymentDto.getReservationId())
-                .orElseThrow(() -> new RuntimeException("Reservation not found with id " + paymentDto.getReservationId()));
+                .orElseThrow(() -> new RuntimeException("No se ha encontrado reservación con ID: " + paymentDto.getReservationId()));
 
         // Verificar si ya existe un pago para esta reservación
         paymentRepository.findByReservationId(reservation.getId()).ifPresent(payment -> {
-            throw new RuntimeException("Payment already exists for reservation id " + reservation.getId());
+            throw new RuntimeException("Ya existe un pago para esta reservación:  " + reservation.getId());
         });
 
         List<ReservationDetails> reservationDetails = reservation.getReservationDetails();
 
         if(reservation.getStatus() != StatusReservation.CONFIRMED) {
-            throw new PaymentFailedException("Reservation is not confirmed");
+            throw new PaymentFailedException("Reservación aún no ha sido confirmada.");
         }
 
         // Crear el pago y asignar los valores desde el DTO

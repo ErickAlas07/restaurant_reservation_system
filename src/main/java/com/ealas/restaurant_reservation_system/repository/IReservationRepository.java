@@ -34,4 +34,8 @@ public interface IReservationRepository extends JpaRepository<Reservation, Long>
 
 
     List<Reservation> findAllByReservationDateBetween(LocalDate startDate, LocalDate endDate);
+
+    @Query("SELECT r FROM Reservation r WHERE r.reservationDate = :twoHoursAgoDate AND r.reservationTime <= :twoHoursAgoTime AND r.status = 'CONFIRMED'")
+    List<Reservation> findReservationsEndedBefore(@Param("twoHoursAgoDate") LocalDate twoHoursAgoDate, @Param("twoHoursAgoTime") LocalTime twoHoursAgoTime);
+
 }

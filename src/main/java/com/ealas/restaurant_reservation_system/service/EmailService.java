@@ -1,6 +1,7 @@
 package com.ealas.restaurant_reservation_system.service;
 
 import com.ealas.restaurant_reservation_system.entity.Payment;
+import com.ealas.restaurant_reservation_system.entity.Reservation;
 import com.ealas.restaurant_reservation_system.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
@@ -30,6 +31,18 @@ public class EmailService {
         message.setText("Querido/a " + user.getName() + " " + user.getLastname() + ",\n\n"
                 + "Tu pago de " + payment.getTotalAmount() + " ha sido procesado exitosamente para tu reservación del "
                 + payment.getReservation().getReservationDate() + ".\n\n"
+                + "¡Te sugerimos llegar 15 minutos antes de tu reservación para que puedas disfrutar de tu experiencia al máximo!\n\n"
+                + "¡Gracias por tu preferencia!");
+
+        mailSender.send(message);
+    }
+
+    public void sendCancellationEmail(User user, Reservation reservation) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(user.getEmail());
+        message.setSubject("Cancelación de reservación");
+        message.setText("Querido/a " + user.getUsername() + ",\n\n"
+                + "Tu reservación del " + reservation.getReservationDate() + " ha sido cancelada exitosamente.\n\n"
                 + "¡Gracias por tu preferencia!");
 
         mailSender.send(message);
